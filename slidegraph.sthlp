@@ -20,13 +20,13 @@
 Configure slide layers:
 
 {p 8 16 2}
-{cmd:slidegraph set}{cmd:,} {cmdab:pat:terns(}{it:color1 pat1 color2 pat2 ...}{cmd:)} [{cmd:off(}{it:string}{cmd:)}]
+{cmd:slidegraph set}{cmd:,} {cmdab:pat:terns(}{it:color1 pat1 color2 pat2 ...}{cmd:)} [{cmd:off(}{it:#}{cmd:)}]
 
 {p 4 8 2}
 Execute multi-frame build:
 
 {p 8 16 2}
-{cmd:slidegraph} [{cmd:,} {cmd:stub(}{it:name}{cmd:)} {cmd:saving(}{it:filename}{cmd:)}] {cmd::} {it:twoway_graph_command}
+{cmd:slidegraph} [{cmd:,} {cmd:stub(}{it:name}{cmd:)} {cmd:saving(}{it:filename}{cmd:)}] {cmd::} {it:graph_command}
 
 {synoptset 22 tabbed}{...}
 {synopthdr}
@@ -37,7 +37,7 @@ Execute multi-frame build:
 
 {syntab:Configuration (slidegraph set)}
 {synopt :{opt pat:terns(string)}}space-delimited list of {it:color_token binary_pattern} pairs (required){p_end}
-{synopt :{opt off(string)}}opacity modifier appended to hidden series; default is {cmd:%0}{p_end}
+{synopt :{opt off(#)}}opacity percentage integer for hidden series (0-100); default is {cmd:0} ({cmd:%0}){p_end}
 {synoptline}
 
 
@@ -56,8 +56,10 @@ modifiers (e.g., turning {cmd:navy} into {cmd:navy%0} when hidden, or {cmd:navy%
 As a result, axes, ticks, labels, and legends remain 100% stationary throughout the build sequence.
 
 {pstd}
-All {help twoway_options:twoway options} (e.g., {cmd:title()}, {cmd:legend()}, {cmd:aspect()}) are specified
-directly within the {it:twoway_graph_command} after the colon. {cmd:slidegraph} manages frame sequencing,
+All graph options (e.g., {cmd:title()}, {cmd:legend()}, {cmd:aspect()}) are specified
+directly within the {it:graph_command} after the colon. While {cmd:twoway} is the most common use case,
+{cmd:slidegraph} works equally well with any Stata graph command that supports series colors, such as
+{cmd:graph bar}, {cmd:graph hbar}, {cmd:graph dot}, and {cmd:graph box}. {cmd:slidegraph} manages frame sequencing,
 color opacity substitution, distinct memory naming, and automatic file export.
 
 
@@ -67,7 +69,7 @@ color opacity substitution, distinct memory naming, and automatic file export.
 {phang}
 {opt stub(name)} sets the memory name prefix for the generated graphs ({it:stub_1}, {it:stub_2}, ..., {it:stub_N}).
 The default is {cmd:slide} ({cmd:slide_1}, {cmd:slide_2}, ...).
-{it:Note:} Avoid specifying {cmd:name()} inside the {it:twoway_graph_command}, as {cmd:slidegraph} injects its own
+{it:Note:} Avoid specifying {cmd:name()} inside the {it:graph_command}, as {cmd:slidegraph} injects its own
 frame names based on {opt stub()}. If a {cmd:name()} option is detected in the graph command, a warning is displayed.
 
 {phang}
@@ -88,8 +90,9 @@ as required by Stata's syntax, and issues a warning that RGB formatting may be s
 All binary patterns must contain only {cmd:0} and {cmd:1} and must have identical length {it:N} (the total frame count).
 
 {phang}
-{opt off(string)} specifies the opacity modifier applied when a bit is {cmd:0}. The default is {cmd:%0} (fully transparent).
-Alternatively, a dimming modifier such as {cmd:%5} or {cmd:%10} can be supplied to de-emphasize inactive series rather than
+{opt off(#)} specifies the opacity percentage integer applied when a bit is {cmd:0}. The value must be an integer between 0 and 100.
+The default is {cmd:0} (which becomes {cmd:%0}, fully transparent).
+Alternatively, a dimming percentage such as {cmd:off(10)} or {cmd:off(25)} can be supplied to de-emphasize inactive series rather than
 hiding them completely.
 
 
@@ -100,16 +103,24 @@ hiding them completely.
 {phang2}{cmd:. sysuse auto, clear}{p_end}
 
 {pstd}1. Two-frame build with titles directly in twoway:{p_end}
-{phang2}{cmd:. slidegraph set, patterns(navy 11 cranberry 01) off(%0)}{p_end}
+{phang2}{cmd:. slidegraph set, patterns(navy 11 cranberry 01)}{p_end}
 {phang2}{cmd:. slidegraph : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)), title("Price vs MPG by Foreign Status")}{p_end}
 
 {pstd}2. Four-frame build with custom stub and automatic PDF export:{p_end}
-{phang2}{cmd:. slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(%0)}{p_end}
+{phang2}{cmd:. slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(0)}{p_end}
 {phang2}{cmd:. slidegraph, stub(build4) saving(build.pdf) : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg if foreign==0, lcolor(midblue)) (lfit price mpg if foreign==1, lcolor(orange)), title("Price vs MPG with Fits")}{p_end}
 
 {pstd}3. Custom RGB colors build:{p_end}
-{phang2}{cmd:. slidegraph set, patterns("230 60 60" 11 "40 120 220" 01) off(%0)}{p_end}
+{phang2}{cmd:. slidegraph set, patterns("230 60 60" 11 "40 120 220" 01) off(0)}{p_end}
 {phang2}{cmd:. slidegraph, stub(rgb_demo) : twoway (scatter price mpg if foreign==0, mcolor("230 60 60")) (scatter price mpg if foreign==1, mcolor("40 120 220")), title("Price vs MPG with RGB")}{p_end}
+
+{pstd}4. Layered bar chart ({cmd:graph bar}):{p_end}
+{phang2}{cmd:. slidegraph set, patterns(navy 11 cranberry 01)}{p_end}
+{phang2}{cmd:. slidegraph, stub(bar_demo) : graph bar (mean) price (mean) mpg, bar(1, color(navy)) bar(2, color(cranberry)) title("Mean Comparison")}{p_end}
+
+{pstd}5. Layered box plot ({cmd:graph box}):{p_end}
+{phang2}{cmd:. slidegraph set, patterns(navy 11 cranberry 01)}{p_end}
+{phang2}{cmd:. slidegraph, stub(box_demo) : graph box price weight, box(1, color(navy)) box(2, color(cranberry)) title("Distribution Comparison")}{p_end}
 
 
 {marker results}{...}

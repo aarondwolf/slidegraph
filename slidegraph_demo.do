@@ -14,14 +14,14 @@ sysuse auto, clear
 // Demonstration 1: 2-Slide Build (Domestic -> Foreign)
 // =============================================================================
 di as text _newline(2) "{hline 70}"
-di as text "DEMONSTRATION 1: 2-Slide Build (Named Colors)"
+di as text "DEMONSTRATION 1: 2-Slide Build (twoway scatter, default off(0))"
 di as text "{hline 70}"
 
 // Step 1: Configure slide build
 // navy (Domestic) is visible in frames 1 and 2 (pattern: 11)
 // cranberry (Foreign) is hidden in frame 1 and visible in frame 2 (pattern: 01)
-// off(%0) sets 0% opacity (completely invisible) when hidden
-slidegraph set, patterns(navy 11 cranberry 01) off(%0)
+// off() defaults to 0 (converted automatically to %0)
+slidegraph set, patterns(navy 11 cranberry 01)
 
 // Step 2: Execute graph sequence
 // Notice: twoway options like title() are placed directly in twoway after the colon
@@ -46,7 +46,7 @@ di as text "{hline 70}"
 //   Frame 2: Domestic + Foreign points
 //   Frame 3: Domestic + Foreign points + Domestic trend
 //   Frame 4: Domestic + Foreign points + Domestic trend + Foreign trend
-slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(%0)
+slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(0)
 
 // Step 2: Execute graph with custom stub and automatic PNG export via saving()
 // saving(demo_build.png) automatically detects .png and calls graph export for each frame
@@ -76,8 +76,8 @@ di as text "DEMONSTRATION 3: Custom RGB Colors Build"
 di as text "{hline 70}"
 
 // Step 1: Configure build with custom RGB triples (in quotes)
-// slidegraph detects RGB values and places opacity modifiers inside quotes
-slidegraph set, patterns("230 60 60" 11 "40 120 220" 01) off(%0)
+// slidegraph detects RGB values, warns, and places opacity modifiers inside quotes
+slidegraph set, patterns("230 60 60" 11 "40 120 220" 01) off(0)
 
 // Step 2: Execute graph with RGB colors
 slidegraph, stub(rgb_demo) : twoway ///
@@ -89,6 +89,45 @@ slidegraph, stub(rgb_demo) : twoway ///
 // Verify RGB graphs in memory
 graph dir rgb_demo*
 
+
+// =============================================================================
+// Demonstration 4: Layered Bar Chart (graph bar)
+// =============================================================================
 di as text _newline(2) "{hline 70}"
-di as text "All demonstrations completed successfully!"
+di as text "DEMONSTRATION 4: Layered Bar Chart (graph bar)"
+di as text "{hline 70}"
+
+// Reveal Price in Frame 1, and add MPG comparison bar in Frame 2
+slidegraph set, patterns(navy 11 cranberry 01) off(0)
+
+slidegraph, stub(demo_bar) : graph bar (mean) price (mean) mpg, ///
+    bar(1, color(navy)) bar(2, color(cranberry))                ///
+    title("Average Price and MPG Comparison")                   ///
+    legend(order(1 "Mean Price" 2 "Mean MPG"))
+
+// Verify bar graphs in memory
+graph dir demo_bar*
+
+
+// =============================================================================
+// Demonstration 5: Comparative Box Plot (graph box)
+// =============================================================================
+di as text _newline(2) "{hline 70}"
+di as text "DEMONSTRATION 5: Comparative Box Plot (graph box)"
+di as text "{hline 70}"
+
+// Stepwise reveal of distribution metrics for Price and Weight
+slidegraph set, patterns(navy 11 cranberry 01) off(0)
+
+slidegraph, stub(demo_box) : graph box price weight,            ///
+    box(1, color(navy)) box(2, color(cranberry))                ///
+    title("Distribution of Price and Weight")                   ///
+    legend(order(1 "Price" 2 "Weight"))
+
+// Verify box graphs in memory
+graph dir demo_box*
+
+
+di as text _newline(2) "{hline 70}"
+di as text "All 5 demonstrations completed successfully!"
 di as text "{hline 70}"

@@ -1,6 +1,6 @@
 *! version 1.2.0  05nov2026
 *! slidegraph: Automated stepped/layered graph generation for presentations
-*! Author: Aaron
+*! Author: Aaron Wolf (aaron.wolf@u.northwestern.edu)
 *! Program architecture: slidegraph set & slidegraph
 
 program define slidegraph, rclass
@@ -51,15 +51,15 @@ end
 // -----------------------------------------------------------------------------
 program define slidegraph_set, rclass
     version 15.0
-    syntax , patterns(string asis) [off(string)]
+    syntax , patterns(string asis) [off(integer 0)]
 
-    // Default off-modifier
-    if `"`off'"' == "" {
-        local off "%0"
+    // Validate off is an integer between 0 and 100
+    if !inrange(`off', 0, 100) {
+        di as error "off() must be an integer between 0 and 100"
+        exit 198
     }
-    else if substr(`"`off'"', 1, 1) != "%" {
-        local off "%`off'"
-    }
+
+    local off_mod "%`off'"
 
     // Count tokens
     local ntokens : word count `patterns'
@@ -121,7 +121,7 @@ program define slidegraph_set, rclass
         mata: st_local("is_rgb", strofreal(_sg_is_rgb(st_local("color"), .)))
         if `is_rgb' {
             local any_rgb = 1
-            di as text "{p 0 4 2}{bf:warning:} RGB color detected (`color'); using RGB opacity modifiers in Stata requires placing the modifier inside quotes (e.g., " as result `""`color' `off'""' as text "), which can be sensitive to formatting and spacing. Named color styles are recommended, but proceeding anyway.{p_end}"
+            di as text "{p 0 4 2}{bf:warning:} RGB color detected (`color'); using RGB opacity modifiers in Stata requires placing the modifier inside quotes (e.g., " as result `""`color' `off_mod'""' as text "), which can be sensitive to formatting and spacing. Named color styles are recommended, but proceeding anyway.{p_end}"
         }
 
         // Store pair information
@@ -133,7 +133,7 @@ program define slidegraph_set, rclass
     // Store configuration in global macros for state persistence
     global SG_patterns `"`patterns'"'
     global SG_N        `N'
-    global SG_off      `"`off'"'
+    global SG_off      `"`off_mod'"'
     global SG_npairs   `npairs'
     global SG_any_rgb  `any_rgb'
 
@@ -141,10 +141,11 @@ program define slidegraph_set, rclass
     return scalar N       = `N'
     return scalar npairs  = `npairs'
     return scalar any_rgb = `any_rgb'
+    return scalar off_val = `off'
     return local patterns `"`patterns'"'
-    return local off      `"`off'"'
+    return local off      `"`off_mod'"'
 
-    di as text "slidegraph configuration set: `npairs' pattern(s) across `N' frame(s), off modifier: " as result "`off'"
+    di as text "slidegraph configuration set: `npairs' pattern(s) across `N' frame(s), off modifier: " as result "`off_mod'"
 end
 
 // -----------------------------------------------------------------------------

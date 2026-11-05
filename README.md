@@ -33,24 +33,25 @@ Because all series are evaluated in every frame, Stata locks in fixed axis limit
 Configures the visibility sequence across frames and validates the pattern matrix.
 
 ```stata
-slidegraph set, patterns(color1 pat1 color2 pat2 ...) [off(string)]
+slidegraph set, patterns(color1 pat1 color2 pat2 ...) [off(integer)]
 ```
 
 - **`patterns(string)`**: Space-separated list of `<color_token> <binary_pattern>` pairs.
   - Supports both standard named color styles (`navy`, `cranberry`, `forest_green`) and custom RGB triples in quotes (`"255 0 0"`, `"0 128 255"`).
   - Every pattern must consist strictly of `0` (hidden/dimmed) and `1` (visible) characters.
   - Every pattern must have the exact same length $N$ (the total frame count).
-- **`off(string)`**: Opacity modifier applied to `0` bits. Defaults to `"%0"`. You can also specify partial dimming (e.g., `off(%10)`).
+- **`off(integer)`**: Opacity percentage integer applied to `0` bits (from `0` to `100`). Defaults to `0` (which automatically becomes `"%0"`, full transparency). You can specify dimming percentages (e.g., `off(10)` or `off(25)`) to de-emphasize inactive series rather than hiding them completely.
 - **RGB Color Detection**: If RGB values are detected, `slidegraph` issues a warning alerting the user that RGB modifiers inside quotes (`"R G B %0"`) may be sensitive to spacing, but proceeds seamlessly by dynamically placing the opacity modifier inside the quotes.
 
 ### 2. `slidegraph`
-Executes the stored multi-frame sequence. Users provide standard `twoway` commands after the colon (`:`) with all native graph options.
+Executes the stored multi-frame sequence. Users provide standard graph commands after the colon (`:`) with all native graph options.
 
 ```stata
-slidegraph [, stub(name) saving(filename)] : <twoway graph command>
+slidegraph [, stub(name) saving(filename)] : <graph command>
 ```
 
-- **No twoway options in `slidegraph`**: Users specify all graph options (e.g., `title(...)`, `subtitle(...)`, `legend(...)`) directly within their `twoway` command after the colon.
+- **Any Stata graph command supported**: Works with `twoway`, `graph bar`, `graph box`, `graph hbar`, `graph dot`, etc.
+- **No graph options in `slidegraph`**: Users specify all graph options (e.g., `title(...)`, `subtitle(...)`, `legend(...)`) directly within their graph command after the colon.
 - **`stub(name)`**: Prefix for memory graph names (`stub_1`, `stub_2`, ..., `stub_N`). Defaults to `slide` (`slide_1`, `slide_2`, ...).
   - *Conflict Detection*: If a `name()` option is detected in the graph command, a warning is displayed alerting the user to potential naming conflicts.
 - **`saving(filename)`**: Unified saving and exporting option that automatically inspects the file postfix/extension:
@@ -68,7 +69,7 @@ Run the included demonstration script `slidegraph_demo.do`:
 sysuse auto, clear
 
 // Domestic points visible in frames 1 and 2; Foreign points appear in frame 2
-slidegraph set, patterns(navy 11 cranberry 01) off(%0)
+slidegraph set, patterns(navy 11 cranberry 01)
 
 // All twoway options (e.g., title) are passed directly to twoway
 slidegraph : twoway ///
@@ -80,7 +81,7 @@ slidegraph : twoway ///
 ### Demonstration 2: 4-Slide Scalable Build with Postfix Export
 ```stata
 // Stepwise reveal: Domestic -> Foreign -> Domestic Trend -> Foreign Trend
-slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(%0)
+slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(0)
 
 // saving(build.png) auto-detects .png and exports build_1.png to build_4.png
 slidegraph, stub(build) saving(build.png) : twoway                                        ///
@@ -96,7 +97,7 @@ slidegraph, stub(build) saving(build.png) : twoway                              
 ### Demonstration 3: Custom RGB Colors
 ```stata
 // RGB triples must be enclosed in quotes
-slidegraph set, patterns("230 60 60" 11 "40 120 220" 01) off(%0)
+slidegraph set, patterns("230 60 60" 11 "40 120 220" 01) off(0)
 
 // Opacity modifier is automatically moved inside quotes: "40 120 220 %0"
 slidegraph, stub(rgb_demo) : twoway ///
@@ -104,6 +105,26 @@ slidegraph, stub(rgb_demo) : twoway ///
     (scatter price mpg if foreign==1, mcolor("40 120 220")),     ///
     title("Price vs MPG with Custom RGB Colors")                 ///
     legend(order(1 "Custom Red (Domestic)" 2 "Custom Blue (Foreign)"))
+```
+
+### Demonstration 4: Layered Bar Chart (`graph bar`)
+```stata
+slidegraph set, patterns(navy 11 cranberry 01)
+
+slidegraph, stub(demo_bar) : graph bar (mean) price (mean) mpg, ///
+    bar(1, color(navy)) bar(2, color(cranberry))                ///
+    title("Average Price and MPG Comparison")                   ///
+    legend(order(1 "Mean Price" 2 "Mean MPG"))
+```
+
+### Demonstration 5: Comparative Box Plot (`graph box`)
+```stata
+slidegraph set, patterns(navy 11 cranberry 01)
+
+slidegraph, stub(demo_box) : graph box price weight,            ///
+    box(1, color(navy)) box(2, color(cranberry))                ///
+    title("Distribution of Price and Weight")                   ///
+    legend(order(1 "Price" 2 "Weight"))
 ```
 
 ---
