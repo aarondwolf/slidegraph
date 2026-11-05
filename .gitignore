@@ -1,0 +1,22 @@
+# Stata log and markup files
+*.log
+*.smcl
+
+# Stata graph files and exported images
+*.gph
+*.png
+*.pdf
+*.eps
+*.svg
+*.tif
+*.tiff
+*.jpg
+*.jpeg
+
+# Editor backup and temporary files
+*~
+*.bak
+*.tmp
+__*
+.DS_Store
+Thumbs.db
