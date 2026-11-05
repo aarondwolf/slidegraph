@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 1.0.0  05nov2026}{...}
+{* *! version 1.1.0  05nov2026}{...}
 {viewerjumpto "Syntax" "slidegraph##syntax"}{...}
 {viewerjumpto "Description" "slidegraph##description"}{...}
 {viewerjumpto "Options" "slidegraph##options"}{...}
@@ -26,16 +26,14 @@ Configure slide layers:
 Execute multi-frame build:
 
 {p 8 16 2}
-{cmd:slidegraph} [{cmd:,} {it:options}] {cmd::} {it:twoway_graph_command}
+{cmd:slidegraph} [{cmd:,} {cmd:stub(}{it:name}{cmd:)} {cmd:saving(}{it:filename}{cmd:)}] {cmd::} {it:twoway_graph_command}
 
 {synoptset 22 tabbed}{...}
 {synopthdr}
 {synoptline}
 {syntab:Main (slidegraph)}
 {synopt :{opt stub(name)}}graph name prefix in memory; default is {cmd:slide}{p_end}
-{synopt :{opt saving(filename [, replace])}}save individual graph frames as {it:filename_i.gph}{p_end}
-{synopt :{opt export(fmt)}}automatically export each frame to image format {it:fmt} (e.g., {cmd:png}, {cmd:pdf}){p_end}
-{synopt :{it:graph_options}}any standard {help twoway_options:twoway graph options} applied to each frame{p_end}
+{synopt :{opt saving(filename)}}save or export individual frames using automatic extension detection (e.g., {cmd:.pdf}, {cmd:.png}, {cmd:.gph}){p_end}
 
 {syntab:Configuration (slidegraph set)}
 {synopt :{opt pat:terns(string)}}space-delimited list of {it:color_token binary_pattern} pairs (required){p_end}
@@ -57,9 +55,29 @@ problem by plotting all series in every single frame and modulating visibility u
 modifiers (e.g., turning {cmd:navy} into {cmd:navy%0} when hidden, or {cmd:navy%5} when dimmed).
 As a result, axes, ticks, labels, and legends remain 100% stationary throughout the build sequence.
 
+{pstd}
+All {help twoway_options:twoway options} (e.g., {cmd:title()}, {cmd:legend()}, {cmd:aspect()}) are specified
+directly within the {it:twoway_graph_command} after the colon. {cmd:slidegraph} manages frame sequencing,
+color opacity substitution, distinct memory naming, and automatic file export.
+
 
 {marker options}{...}
 {title:Options}
+
+{phang}
+{opt stub(name)} sets the memory name prefix for the generated graphs ({it:stub_1}, {it:stub_2}, ..., {it:stub_N}).
+The default is {cmd:slide} ({cmd:slide_1}, {cmd:slide_2}, ...).
+{it:Note:} Avoid specifying {cmd:name()} inside the {it:twoway_graph_command}, as {cmd:slidegraph} injects its own
+frame names based on {opt stub()}. If a {cmd:name()} option is detected in the graph command, a warning is displayed.
+
+{phang}
+{opt saving(filename)} automatically saves or exports each rendered slide with the frame index inserted before the file extension
+({it:filename_1.ext}, {it:filename_2.ext}, ..., {it:filename_N.ext}).
+The action is determined automatically by inspecting the file postfix:
+{break}
+- {cmd:.pdf}, {cmd:.png}, {cmd:.svg}, {cmd:.eps}, {cmd:.tif}: automatically calls {cmd:graph export}.
+{break}
+- {cmd:.gph} (or omitting an extension): automatically calls {cmd:graph save}.
 
 {phang}
 {opt patterns(string)} specifies the series visibility sequence using paired color tokens and binary strings.
@@ -72,17 +90,6 @@ All binary patterns must contain only {cmd:0} and {cmd:1} and must have identica
 Alternatively, a dimming modifier such as {cmd:%5} or {cmd:%10} can be supplied to de-emphasize inactive series rather than
 hiding them completely.
 
-{phang}
-{opt stub(name)} sets the memory name prefix for the generated graphs ({it:stub_1}, {it:stub_2}, ..., {it:stub_N}).
-The default is {cmd:slide} ({cmd:slide_1}, {cmd:slide_2}, ...).
-
-{phang}
-{opt saving(filename [, replace])} specifies that each frame {it:i} should be saved to disk as a Stata graph file
-({it:filename_i.gph}).
-
-{phang}
-{opt export(fmt)} automatically exports each rendered slide to {it:stub_i.fmt} (e.g., {cmd:export(png)} or {cmd:export(pdf)}).
-
 
 {marker examples}{...}
 {title:Examples}
@@ -90,13 +97,13 @@ The default is {cmd:slide} ({cmd:slide_1}, {cmd:slide_2}, ...).
 {pstd}Load example data:{p_end}
 {phang2}{cmd:. sysuse auto, clear}{p_end}
 
-{pstd}1. Two-frame build introducing foreign cars in frame 2:{p_end}
+{pstd}1. Two-frame build with titles directly in twoway:{p_end}
 {phang2}{cmd:. slidegraph set, patterns(navy 11 cranberry 01) off(%0)}{p_end}
-{phang2}{cmd:. slidegraph, title("Price vs MPG by Foreign Status") : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry))}{p_end}
+{phang2}{cmd:. slidegraph : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)), title("Price vs MPG by Foreign Status")}{p_end}
 
-{pstd}2. Four-frame build with points, lines, and custom stub name:{p_end}
+{pstd}2. Four-frame build with custom stub and automatic PDF export:{p_end}
 {phang2}{cmd:. slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(%0)}{p_end}
-{phang2}{cmd:. slidegraph, stub(build4) title("Price vs MPG with Fits") : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg if foreign==0, lcolor(midblue)) (lfit price mpg if foreign==1, lcolor(orange))}{p_end}
+{phang2}{cmd:. slidegraph, stub(build4) saving(build.pdf) : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg if foreign==0, lcolor(midblue)) (lfit price mpg if foreign==1, lcolor(orange)), title("Price vs MPG with Fits")}{p_end}
 
 
 {marker results}{...}
@@ -115,6 +122,6 @@ The default is {cmd:slide} ({cmd:slide_1}, {cmd:slide_2}, ...).
 {synopt:{cmd:r(off)}}off modifier{p_end}
 
 {pstd}
-Configuration is also persisted in global macros ({cmd:$SG_patterns}, {cmd:$SG_N}, {cmd:$SG_off}, {cmd:$SG_npairs})
+Configuration is persisted in global macros ({cmd:$SG_patterns}, {cmd:$SG_N}, {cmd:$SG_off}, {cmd:$SG_npairs})
 so it remains available across subsequent commands.
 {p2colreset}{...}

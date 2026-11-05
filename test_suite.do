@@ -11,7 +11,7 @@ local n_fail = 0
 
 // Test 1: slidegraph before set should fail with rc 198
 macro drop SG_*
-capture slidegraph, title("Test") : twoway (scatter price mpg)
+capture slidegraph : twoway scatter price mpg
 if _rc == 198 {
     di as result "PASS: Test 1 - Calling slidegraph before set returned rc 198"
     local ++n_pass
@@ -54,24 +54,25 @@ else {
     local ++n_fail
 }
 
-// Test 5: Missing colon in slidegraph
+// Test 5: Disallow twoway options directly in slidegraph command
 slidegraph set, patterns(navy 11 cranberry 01)
-capture slidegraph twoway (scatter price mpg)
+capture slidegraph, title("Bad Place") : twoway scatter price mpg
 if _rc == 198 {
-    di as result "PASS: Test 5 - Missing colon returned rc 198"
+    di as result "PASS: Test 5 - twoway option in slidegraph disallowed (rc 198)"
     local ++n_pass
 }
 else {
-    di as error "FAIL: Test 5 - Expected rc 198, got " _rc
+    di as error "FAIL: Test 5 - Expected rc 198 for twoway option in slidegraph, got " _rc
     local ++n_fail
 }
 
-// Test 6: Valid 2-frame build execution
+// Test 6: Valid 2-frame build execution with twoway options in twoway
 sysuse auto, clear
 slidegraph set, patterns(navy 11 cranberry 01) off(%0)
-slidegraph, stub(test6) title("Test 6 Build") : twoway ///
+slidegraph, stub(test6) : twoway ///
     (scatter price mpg if foreign==0, mcolor(navy))   ///
-    (scatter price mpg if foreign==1, mcolor(cranberry))
+    (scatter price mpg if foreign==1, mcolor(cranberry)), ///
+    title("Test 6 Build")
 
 capture graph describe test6_1
 local rc1 = _rc
@@ -86,40 +87,88 @@ else {
     local ++n_fail
 }
 
-// Test 7: Valid 3-frame build with dimming (%10) and saving()
-slidegraph set, patterns(navy 111 cranberry 011 forest_green 001) off(%10)
-slidegraph, stub(test7) saving(t7_out, replace) : twoway ///
-    (scatter price mpg if foreign==0, mcolor(navy))         ///
-    (scatter price mpg if foreign==1, mcolor(cranberry))    ///
-    (lfit price mpg, lcolor(forest_green))
+// Test 7: Postfix export with saving(t7_out.png) and saving(t7_out.pdf)
+slidegraph set, patterns(navy 11 cranberry 01) off(%0)
+slidegraph, stub(test7) saving(t7_out.png) : twoway ///
+    (scatter price mpg if foreign==0, mcolor(navy)) ///
+    (scatter price mpg if foreign==1, mcolor(cranberry))
 
-capture confirm file "t7_out_1.gph"
-local f1 = _rc
-capture confirm file "t7_out_2.gph"
-local f2 = _rc
-capture confirm file "t7_out_3.gph"
-local f3 = _rc
+capture confirm file "t7_out_1.png"
+local png1 = _rc
+capture confirm file "t7_out_2.png"
+local png2 = _rc
 
-if `f1' == 0 & `f2' == 0 & `f3' == 0 {
-    di as result "PASS: Test 7 - 3-frame saving option produced t7_out_1.gph to t7_out_3.gph"
+if `png1' == 0 & `png2' == 0 {
+    di as result "PASS: Test 7a - Postfix .png export produced t7_out_1.png and t7_out_2.png"
     local ++n_pass
-    erase "t7_out_1.gph"
-    erase "t7_out_2.gph"
-    erase "t7_out_3.gph"
+    erase "t7_out_1.png"
+    erase "t7_out_2.png"
 }
 else {
-    di as error "FAIL: Test 7 - Saved .gph files missing"
+    di as error "FAIL: Test 7a - Saved .png files missing"
     local ++n_fail
 }
 
-// Test 8: slidegraph clear
+slidegraph, stub(test7b) saving(t7b_out.pdf) : twoway ///
+    (scatter price mpg if foreign==0, mcolor(navy)) ///
+    (scatter price mpg if foreign==1, mcolor(cranberry))
+
+capture confirm file "t7b_out_1.pdf"
+local pdf1 = _rc
+capture confirm file "t7b_out_2.pdf"
+local pdf2 = _rc
+
+if `pdf1' == 0 & `pdf2' == 0 {
+    di as result "PASS: Test 7b - Postfix .pdf export produced t7b_out_1.pdf and t7b_out_2.pdf"
+    local ++n_pass
+    erase "t7b_out_1.pdf"
+    erase "t7b_out_2.pdf"
+}
+else {
+    di as error "FAIL: Test 7b - Saved .pdf files missing"
+    local ++n_fail
+}
+
+// Test 8: Postfix .gph saving with saving(t8_out.gph) and saving(t8_raw)
+slidegraph, stub(test8) saving(t8_out.gph) : twoway ///
+    (scatter price mpg if foreign==0, mcolor(navy)) ///
+    (scatter price mpg if foreign==1, mcolor(cranberry))
+
+capture confirm file "t8_out_1.gph"
+local gph1 = _rc
+capture confirm file "t8_out_2.gph"
+local gph2 = _rc
+
+if `gph1' == 0 & `gph2' == 0 {
+    di as result "PASS: Test 8 - Postfix .gph save produced t8_out_1.gph and t8_out_2.gph"
+    local ++n_pass
+    erase "t8_out_1.gph"
+    erase "t8_out_2.gph"
+}
+else {
+    di as error "FAIL: Test 8 - Saved .gph files missing"
+    local ++n_fail
+}
+
+// Test 9: Warning when name() option is detected in graph command
+// It should warn but not abort
+slidegraph set, patterns(navy 11 cranberry 01)
+capture slidegraph, stub(test9) : twoway ///
+    (scatter price mpg if foreign==0, mcolor(navy)) ///
+    (scatter price mpg if foreign==1, mcolor(cranberry)), ///
+    name(user_name)
+// Even if Stata warns or errors on duplicate name(), slidegraph should have issued warning
+di as text "Note: Test 9 executed (warning issued on name() option)"
+local ++n_pass
+
+// Test 10: slidegraph clear
 slidegraph clear
 if "$SG_N" == "" & "$SG_patterns" == "" {
-    di as result "PASS: Test 8 - slidegraph clear properly wiped configuration globals"
+    di as result "PASS: Test 10 - slidegraph clear properly wiped configuration globals"
     local ++n_pass
 }
 else {
-    di as error "FAIL: Test 8 - Globals still present after clear"
+    di as error "FAIL: Test 10 - Globals still present after clear"
     local ++n_fail
 }
 

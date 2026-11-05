@@ -24,19 +24,21 @@ di as text "{hline 70}"
 slidegraph set, patterns(navy 11 cranberry 01) off(%0)
 
 // Step 2: Execute graph sequence
-slidegraph, title("Price vs MPG by Foreign Status") : twoway ///
+// Notice: twoway options like title() are placed directly in twoway after the colon
+slidegraph : twoway ///
     (scatter price mpg if foreign==0, mcolor(navy))         ///
-    (scatter price mpg if foreign==1, mcolor(cranberry))
+    (scatter price mpg if foreign==1, mcolor(cranberry)),   ///
+    title("Price vs MPG by Foreign Status")
 
 // Verify graphs in memory
 graph dir slide*
 
 
 // =============================================================================
-// Demonstration 2: 4-Slide Scalable Build (Domestic -> Foreign -> Trends)
+// Demonstration 2: 4-Slide Scalable Build with saving(demo_build.png)
 // =============================================================================
 di as text _newline(2) "{hline 70}"
-di as text "DEMONSTRATION 2: 4-Slide Scalable Build"
+di as text "DEMONSTRATION 2: 4-Slide Scalable Build with Postfix Export"
 di as text "{hline 70}"
 
 // Step 1: Configure 4-frame build with 4 distinct series
@@ -46,16 +48,24 @@ di as text "{hline 70}"
 //   Frame 4: Domestic + Foreign points + Domestic trend + Foreign trend
 slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(%0)
 
-// Step 2: Execute graph with custom stub and legend options
-slidegraph, stub(build4) title("Evolution of Price vs MPG with Fits") subtitle("Demonstrating 4-frame stepped progression") : twoway ///
+// Step 2: Execute graph with custom stub and automatic PNG export via saving()
+// saving(demo_build.png) automatically detects .png and calls graph export for each frame
+slidegraph, stub(build4) saving(demo_build.png) : twoway ///
     (scatter price mpg if foreign==0, mcolor(navy) msymbol(circle))                       ///
     (scatter price mpg if foreign==1, mcolor(cranberry) msymbol(diamond))                 ///
     (lfit price mpg if foreign==0,    lcolor(midblue) lwidth(medthick))                   ///
     (lfit price mpg if foreign==1,    lcolor(orange) lwidth(medthick) lpattern(dash)),    ///
+    title("Evolution of Price vs MPG with Fits")                                          ///
+    subtitle("Demonstrating 4-frame stepped progression")                                 ///
     legend(order(1 "Domestic" 2 "Foreign" 3 "Domestic Fit" 4 "Foreign Fit") rows(1))
 
 // Verify 4-frame graphs in memory
 graph dir build4*
+
+// Clean up demo exported PNG files (ignored by git, but clean environment)
+forvalues i = 1/4 {
+    capture erase "demo_build_`i'.png"
+}
 
 di as text _newline(2) "{hline 70}"
 di as text "Demonstration completed successfully!"

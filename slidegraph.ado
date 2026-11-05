@@ -1,4 +1,4 @@
-*! version 1.0.0  05nov2026
+*! version 1.1.0  05nov2026
 *! slidegraph: Automated stepped/layered graph generation for presentations
 *! Author: Aaron
 *! Program architecture: slidegraph set & slidegraph
@@ -16,7 +16,7 @@ program define slidegraph, rclass
             di as text "slidegraph: Automated stepped/layered graph builds for slide presentations"
             di as text "Usage:"
             di as text "  {bf:slidegraph set}, patterns(color1 pat1 color2 pat2 ...) [off(%0)]"
-            di as text "  {bf:slidegraph} [, stub(string) saving(string) export(string) {it:graph_options}] : {it:twoway_cmd}"
+            di as text "  {bf:slidegraph} [, stub(string) saving(string)] : {it:twoway_cmd}"
             exit 0
         }
     }
@@ -142,16 +142,26 @@ program define slidegraph_run, rclass
     local before `"`s(before)'"'
     local cmd    `"`s(after)'"'
 
-    // Parse options before the colon
+    // Parse options before the colon (strictly slidegraph options: stub, saving)
     local 0 `"`before'"'
-    syntax [, saving(string) stub(string) export(string) *]
+    syntax [, stub(string) saving(string)]
 
     if `"`stub'"' == "" {
         local stub "slide"
     }
 
-    // Split raw twoway command into body and top-level options
-    mata: _slidegraph_split_cmd(st_local("cmd"), "cmd_body", "cmd_opts")
+    // Warn if name() was already specified in the graph command
+    if ustrregexm(`"`cmd'"', "\bname\s*\(") {
+        di as text "{p 0 4 2}{bf:warning:} 'name()' option detected in graph command; specifying both stub() in slidegraph and name() in the graph command may cause issues{p_end}"
+    }
+
+    // Parse saving option if specified
+    local save_stem ""
+    local save_ext ""
+    local save_type ""
+    if `"`saving'"' != "" {
+        mata: _slidegraph_parse_save(st_local("saving"), "save_stem", "save_ext", "save_type")
+    }
 
     local N      = $SG_N
     local npairs = $SG_npairs
@@ -159,7 +169,7 @@ program define slidegraph_run, rclass
 
     // Loop through each frame i = 1 to N
     forvalues i = 1/`N' {
-        local cur_body `"`cmd_body'"'
+        local cur_cmd `"`cmd'"'
 
         // Apply visibility modifications for frame i
         forvalues p = 1/`npairs' {
@@ -171,49 +181,40 @@ program define slidegraph_run, rclass
             local bit = substr("`pat'", `i', 1)
             if "`bit'" == "0" {
                 // Dim/hide color using word-boundary replacement
-                local cur_body = ustrregexra(`"`cur_body'"', "\b" + "`color'" + "\b", "`color'" + "`off'")
+                local cur_cmd = ustrregexra(`"`cur_cmd'"', "\b" + "`color'" + "\b", "`color'" + "`off'")
             }
         }
 
         // Frame name in memory
         local graphname "`stub'_`i'"
-        local frame_opts `"name(`graphname', replace)"'
+        local name_opt `"name(`graphname', replace)"'
 
-        // File saving option if requested
-        if `"`saving'"' != "" {
-            tokenize `"`saving'"', parse(",")
-            local s_name `"`1'"'
-            local s_sub  `"`2'`3'"'
-            if `"`s_sub'"' == "" {
-                local s_sub ", replace"
-            }
-            local frame_opts `"`frame_opts' saving("`s_name'_`i'"`s_sub')"'
-        }
-
-        // Append graph options from twoway command and slidegraph prefix
-        if `"`cmd_opts'"' != "" {
-            local frame_opts `"`frame_opts' `cmd_opts'"'
-        }
-        if `"`options'"' != "" {
-            local frame_opts `"`frame_opts' `options'"'
-        }
+        // Inject name() option cleanly into the graph command
+        mata: _slidegraph_inject_name(st_local("cur_cmd"), st_local("name_opt"), "exec_cmd")
 
         // Execute the modified command for frame i
         di as text _col(2) "{hline 64}"
         di as text "slidegraph frame `i'/`N' ({bf:`graphname'}):"
-        di as result `"  `cur_body', `frame_opts'"'
-        `cur_body', `frame_opts'
+        di as result `"  `exec_cmd'"'
+        `exec_cmd'
 
-        // Optional export
-        if `"`export'"' != "" {
-            graph export "`stub'_`i'.`export'", replace
-            di as text `"  Saved image: `stub'_`i'.`export'"'
+        // Save or export frame if saving() was requested
+        if "`save_type'" == "save" {
+            graph save `graphname' `"`save_stem'_`i'`save_ext'"', replace
+            di as text `"  Saved graph: `save_stem'_`i'`save_ext'"'
+        }
+        else if "`save_type'" == "export" {
+            graph export `"`save_stem'_`i'`save_ext'"', name(`graphname') replace
+            di as text `"  Exported image: `save_stem'_`i'`save_ext'"'
         }
     }
 
     return scalar N = `N'
     return local stub "`stub'"
     return local off `"$SG_off"'
+    if `"`saving'"' != "" {
+        return local saving `"`saving'"'
+    }
 end
 
 // -----------------------------------------------------------------------------
@@ -243,37 +244,60 @@ program define slidegraph_query
 end
 
 // -----------------------------------------------------------------------------
-// Mata Helper: Split graph command into body and top-level options
+// Mata Helpers
 // -----------------------------------------------------------------------------
 mata:
 mata set matastrict on
-void _slidegraph_split_cmd(string scalar raw, string scalar local_body, string scalar local_opts)
+
+// Inject name(..., replace) into command without syntax error from multiple commas
+void _slidegraph_inject_name(string scalar raw, string scalar name_opt, string scalar s_out)
 {
-    real scalar i, n, depth, comma_pos
-    string scalar ch
+    real scalar i, n, depth, has_comma
+    string scalar ch, trimmed
 
-    n = strlen(raw)
+    trimmed = strtrim(raw)
+    n = strlen(trimmed)
     depth = 0
-    comma_pos = 0
-
-    // Find the first comma at paren depth == 0
+    has_comma = 0
     for (i = 1; i <= n; i++) {
-        ch = bsubstr(raw, i, 1)
+        ch = bsubstr(trimmed, i, 1)
         if (ch == "(") depth++
         else if (ch == ")") depth--
         else if (ch == "," & depth == 0) {
-            comma_pos = i
+            has_comma = 1
             break
         }
     }
-
-    if (comma_pos > 0) {
-        st_local(local_body, bsubstr(raw, 1, comma_pos - 1))
-        st_local(local_opts, bsubstr(raw, comma_pos + 1, n - comma_pos))
+    if (has_comma) {
+        st_local(s_out, trimmed + " " + name_opt)
     }
     else {
-        st_local(local_body, raw)
-        st_local(local_opts, "")
+        st_local(s_out, trimmed + ", " + name_opt)
     }
+}
+
+// Parse saving() argument, detecting file stem and postfix extension
+void _slidegraph_parse_save(string scalar arg, string scalar s_stem, string scalar s_ext, string scalar s_type)
+{
+    string scalar clean, stem, ext, type
+
+    clean = strtrim(subinstr(arg, `"""', ""))
+    if (strpos(clean, ",")) {
+        clean = strtrim(bsubstr(clean, 1, strpos(clean, ",") - 1))
+    }
+    ext = pathsuffix(clean)
+    stem = pathrmsuffix(clean)
+
+    if (ext == "" | strlower(ext) == ".gph") {
+        if (ext == "") ext = ".gph"
+        type = "save"
+    }
+    else {
+        type = "export"
+    }
+
+    st_local(s_stem, stem)
+    st_local(s_ext, strlower(ext))
+    st_local(s_type, type)
 }
 end

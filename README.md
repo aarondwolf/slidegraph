@@ -42,16 +42,18 @@ slidegraph set, patterns(color1 pat1 color2 pat2 ...) [off(string)]
 - **`off(string)`**: Opacity modifier applied to `0` bits. Defaults to `"%0"`. You can also specify partial dimming (e.g., `off(%10)`).
 
 ### 2. `slidegraph`
-Executes the stored multi-frame sequence, modifying the graph command for each frame $i = 1, \dots, N$.
+Executes the stored multi-frame sequence. Users provide standard `twoway` commands after the colon (`:`) with all native graph options.
 
 ```stata
-slidegraph [, stub(name) saving(filename [, replace]) export(fmt) *] : <any twoway graph command>
+slidegraph [, stub(name) saving(filename)] : <twoway graph command>
 ```
 
+- **No twoway options in `slidegraph`**: Users specify all graph options (e.g., `title(...)`, `subtitle(...)`, `legend(...)`) directly within their `twoway` command after the colon.
 - **`stub(name)`**: Prefix for memory graph names (`stub_1`, `stub_2`, ..., `stub_N`). Defaults to `slide` (`slide_1`, `slide_2`, ...).
-- **`saving(filename [, replace])`**: Saves each frame to disk as `filename_i.gph`.
-- **`export(fmt)`**: Automatically exports each slide to disk in the specified format (e.g., `export(png)` or `export(pdf)`).
-- **`*`**: Any standard Stata `twoway` options (e.g., `title(...)`, `subtitle(...)`, `legend(...)`) passed before the colon will be applied to each frame.
+  - *Conflict Detection*: If a `name()` option is detected in the graph command, a warning is displayed alerting the user to potential naming conflicts.
+- **`saving(filename)`**: Unified saving and exporting option that automatically inspects the file postfix/extension:
+  - `.pdf`, `.png`, `.svg`, `.eps`, `.tif` $\to$ automatically calls `graph export "filename_i.ext", name(stub_i) replace`.
+  - `.gph` (or omitting an extension) $\to$ automatically calls `graph save stub_i "filename_i.gph", replace`.
 
 ---
 
@@ -66,21 +68,26 @@ sysuse auto, clear
 // Domestic points visible in frames 1 and 2; Foreign points appear in frame 2
 slidegraph set, patterns(navy 11 cranberry 01) off(%0)
 
-slidegraph, title("Price vs MPG by Foreign Status") : twoway ///
+// All twoway options (e.g., title) are passed directly to twoway
+slidegraph : twoway ///
     (scatter price mpg if foreign==0, mcolor(navy))         ///
-    (scatter price mpg if foreign==1, mcolor(cranberry))
+    (scatter price mpg if foreign==1, mcolor(cranberry)),   ///
+    title("Price vs MPG by Foreign Status")
 ```
 
-### Demonstration 2: 4-Slide Scalable Build
+### Demonstration 2: 4-Slide Scalable Build with Postfix Export
 ```stata
 // Stepwise reveal: Domestic -> Foreign -> Domestic Trend -> Foreign Trend
 slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(%0)
 
-slidegraph, stub(build4) title("Evolution of Price vs MPG with Fits") : twoway            ///
+// saving(build.png) auto-detects .png and exports build_1.png to build_4.png
+slidegraph, stub(build) saving(build.png) : twoway                                        ///
     (scatter price mpg if foreign==0, mcolor(navy) msymbol(circle))                       ///
     (scatter price mpg if foreign==1, mcolor(cranberry) msymbol(diamond))                 ///
     (lfit price mpg if foreign==0,    lcolor(midblue) lwidth(medthick))                   ///
     (lfit price mpg if foreign==1,    lcolor(orange) lwidth(medthick) lpattern(dash)),    ///
+    title("Evolution of Price vs MPG with Fits")                                          ///
+    subtitle("Demonstrating 4-frame stepped progression")                                 ///
     legend(order(1 "Domestic" 2 "Foreign" 3 "Domestic Fit" 4 "Foreign Fit") rows(1))
 ```
 
@@ -88,9 +95,9 @@ slidegraph, stub(build4) title("Evolution of Price vs MPG with Fits") : twoway  
 
 ## State Persistence Note
 
-Stata wipes standard `r()` results whenever a new command runs. To maintain a smooth interactive experience, `slidegraph set` stores parsed configuration in global macros (`$SG_patterns`, `$SG_N`, `$SG_off`, `$SG_npairs`) so that `slidegraph` can be run repeatedly without having to re-declare configuration every time.
+Stata wipes standard `r()` results whenever a new command runs. `slidegraph set` persists configuration in global macros (`$SG_patterns`, `$SG_N`, `$SG_off`, `$SG_npairs`) so that `slidegraph` can be run repeatedly without having to re-declare configuration every time.
 
-To inspect the current configuration:
+To inspect active configuration:
 ```stata
 slidegraph
 // or
@@ -110,4 +117,4 @@ Run the included test suite in Stata:
 ```stata
 do test_suite.do
 ```
-Tests verify parameter validation, syntax errors, frame count matching, opacity modifier formatting, memory graph retention, and file exports.
+Tests verify parameter validation, restriction of twoway options in `slidegraph`, warning detection for `name()`, postfix export for `.png`/`.pdf`, `.gph` graph saving, memory retention, and cleanup.
