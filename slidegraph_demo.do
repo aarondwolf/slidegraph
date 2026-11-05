@@ -128,6 +128,60 @@ slidegraph, stub(demo_box) : graph box price weight,            ///
 graph dir demo_box*
 
 
+// =============================================================================
+// Demonstration 6: Shorthand Presets & 3-State Spotlight Build
+// =============================================================================
 di as text _newline(2) "{hline 70}"
-di as text "All 5 demonstrations completed successfully!"
+di as text "DEMONSTRATION 6: Shorthand Presets & 3-State Spotlight Build"
+di as text "{hline 70}"
+
+// Step 1: Spotlight preset automatically sets:
+// navy: 21 (frame 1 focus, frame 2 dimmed to %20)
+// cranberry: 02 (frame 1 off, frame 2 focus)
+slidegraph set, colors(navy cranberry) spotlight dim(20) off(0)
+
+// Step 2: Execute graph
+slidegraph, stub(spotlight_demo) : twoway ///
+    (scatter price mpg if foreign==0, mcolor(navy))         ///
+    (scatter price mpg if foreign==1, mcolor(cranberry)),   ///
+    title("Spotlight Progression: Domestic Focus -> Foreign Focus")
+
+graph dir spotlight_demo*
+
+
+// =============================================================================
+// Demonstration 7: Full Figure + Slide Sequence + LaTeX Beamer Export
+// =============================================================================
+di as text _newline(2) "{hline 70}"
+di as text "DEMONSTRATION 7: Full Figure + Slide Sequence + LaTeX Beamer Export"
+di as text "{hline 70}"
+
+// Step 1: Set up cumulative 3-frame build
+slidegraph set, colors(navy cranberry midblue) cumulative
+
+// Step 2: Execute with full option and PDF saving
+// full generates both suffixed slide frames (paper_slide_1.pdf, ...)
+// AND the unsuffixed full paper figure (paper_slide.pdf and paper_slide in memory)
+slidegraph, stub(paper_slide) saving(paper_slide.pdf) full : twoway ///
+    (scatter price mpg if foreign==0, mcolor(navy))                 ///
+    (scatter price mpg if foreign==1, mcolor(cranberry))           ///
+    (lfit price mpg, lcolor(midblue)),                             ///
+    title("Price vs MPG with Overall Trend")
+
+// Step 3: Export LaTeX Beamer overlay snippet with custom relative path
+slidegraph export using "paper_slide_overlays.tex", path("figures/slides") replace
+
+// Display the generated .tex file content
+type "paper_slide_overlays.tex"
+
+// Clean up demo files
+capture erase "paper_slide.pdf"
+capture erase "paper_slide_1.pdf"
+capture erase "paper_slide_2.pdf"
+capture erase "paper_slide_3.pdf"
+capture erase "paper_slide_overlays.tex"
+
+
+di as text _newline(2) "{hline 70}"
+di as text "All 7 demonstrations completed successfully!"
 di as text "{hline 70}"

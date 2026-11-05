@@ -32,14 +32,24 @@ else {
     local ++n_fail
 }
 
-// Test 3: Non-binary pattern
-capture slidegraph set, patterns(navy 12 cranberry 01)
+// Test 3: Invalid pattern character (not 0, 1, or 2)
+capture slidegraph set, patterns(navy 13 cranberry 01)
 if _rc == 198 {
-    di as result "PASS: Test 3 - Non-binary pattern returned rc 198"
+    di as result "PASS: Test 3a - Invalid character '3' in pattern returned rc 198"
     local ++n_pass
 }
 else {
-    di as error "FAIL: Test 3 - Expected rc 198, got " _rc
+    di as error "FAIL: Test 3a - Expected rc 198 for character '3', got " _rc
+    local ++n_fail
+}
+
+slidegraph set, patterns(navy 12 cranberry 01)
+if r(has_2) == 1 {
+    di as result "PASS: Test 3b - 3-state pattern with '2' accepted and flagged has_2=1"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 3b - 3-state pattern with '2' not flagged has_2=1"
     local ++n_fail
 }
 
@@ -261,14 +271,168 @@ else {
     local ++n_fail
 }
 
-// Test 13: slidegraph clear
-slidegraph clear
-if `"$SG_N"' == "" & `"$SG_patterns"' == "" {
-    di as result "PASS: Test 13 - slidegraph clear properly wiped configuration globals"
+// Test 14: Shorthand presets (cumulative and spotlight)
+slidegraph set, colors(navy cranberry midblue) cumulative
+if "$SG_N" == "3" & `"$SG_patterns"' == "navy 222 cranberry 022 midblue 002" {
+    di as result "PASS: Test 14a - colors() cumulative generated 222 / 022 / 002"
     local ++n_pass
 }
 else {
-    di as error "FAIL: Test 13 - Globals still present after clear"
+    di as error `"FAIL: Test 14a - Unexpected cumulative patterns: $SG_patterns"'
+    local ++n_fail
+}
+
+slidegraph set, colors(navy cranberry midblue) spotlight
+if "$SG_N" == "3" & `"$SG_patterns"' == "navy 211 cranberry 021 midblue 002" {
+    di as result "PASS: Test 14b - colors() spotlight generated 211 / 021 / 002"
+    local ++n_pass
+}
+else {
+    di as error `"FAIL: Test 14b - Unexpected spotlight patterns: $SG_patterns"'
+    local ++n_fail
+}
+
+// Test 15: Preset and dim() validation
+capture slidegraph set, patterns(navy 11) colors(navy cranberry) cumulative
+if _rc == 198 {
+    di as result "PASS: Test 15a - Specifying both patterns() and colors() rejected with rc 198"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 15a - Expected rc 198 for both patterns() and colors()"
+    local ++n_fail
+}
+
+capture slidegraph set, colors(navy cranberry)
+if _rc == 198 {
+    di as result "PASS: Test 15b - colors() without preset rejected with rc 198"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 15b - Expected rc 198 for colors() without preset"
+    local ++n_fail
+}
+
+capture slidegraph set, colors(navy cranberry) cumulative spotlight
+if _rc == 198 {
+    di as result "PASS: Test 15c - Specifying both cumulative and spotlight rejected with rc 198"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 15c - Expected rc 198 for both cumulative and spotlight"
+    local ++n_fail
+}
+
+capture slidegraph set, colors(navy cranberry) cumulative dim(120)
+if _rc == 198 {
+    di as result "PASS: Test 15d - dim(120) rejected with rc 198"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 15d - Expected rc 198 for dim(120)"
+    local ++n_fail
+}
+
+// Test 16: 3-State pattern execution (focus 2, dim 1, off 0)
+slidegraph set, colors(navy cranberry) spotlight dim(25) off(0)
+slidegraph, stub(test16) : twoway ///
+    (scatter price mpg if foreign==0, mcolor(navy)) ///
+    (scatter price mpg if foreign==1, mcolor(cranberry))
+
+capture graph describe test16_1
+local rc_t16_1 = _rc
+capture graph describe test16_2
+local rc_t16_2 = _rc
+if `rc_t16_1' == 0 & `rc_t16_2' == 0 {
+    di as result "PASS: Test 16 - 3-State spotlight build created test16_1 and test16_2"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 16 - 3-State graphs not found in memory"
+    local ++n_fail
+}
+
+// Test 17: full option with memory name and disk export
+slidegraph set, colors(navy cranberry) cumulative
+slidegraph, stub(test17) saving(test17_plot.png) full : twoway ///
+    (scatter price mpg if foreign==0, mcolor(navy)) ///
+    (scatter price mpg if foreign==1, mcolor(cranberry))
+
+capture graph describe test17_1
+local rc_t17_1 = _rc
+capture graph describe test17_2
+local rc_t17_2 = _rc
+capture graph describe test17
+local rc_t17_full = _rc
+
+capture confirm file "test17_plot_1.png"
+local f1 = _rc
+capture confirm file "test17_plot_2.png"
+local f2 = _rc
+capture confirm file "test17_plot.png"
+local f_full = _rc
+
+if `rc_t17_1' == 0 & `rc_t17_2' == 0 & `rc_t17_full' == 0 & `f1' == 0 & `f2' == 0 & `f_full' == 0 {
+    di as result "PASS: Test 17 - full option created suffixed and unsuffixed graphs in memory and disk"
+    local ++n_pass
+    capture erase "test17_plot_1.png"
+    capture erase "test17_plot_2.png"
+    capture erase "test17_plot.png"
+}
+else {
+    di as error "FAIL: Test 17 - full option graph or disk files missing"
+    local ++n_fail
+}
+
+// Test 18: slidegraph export generating .tex file
+slidegraph export using "test18_beamer.tex", replace
+capture confirm file "test18_beamer.tex"
+local tex_rc = _rc
+if `tex_rc' == 0 {
+    di as result "PASS: Test 18 - slidegraph export wrote test18_beamer.tex"
+    local ++n_pass
+    capture erase "test18_beamer.tex"
+}
+else {
+    di as error "FAIL: Test 18 - test18_beamer.tex not found"
+    local ++n_fail
+}
+
+// Test 19: slidegraph export with custom path() and options()
+slidegraph export using "test19_beamer.tex", path("slides/figs") options("width=0.85\textwidth") replace
+capture confirm file "test19_beamer.tex"
+local tex_rc19 = _rc
+if `tex_rc19' == 0 & `"`r(path)'"' == "slides/figs" & `"`r(options)'"' == "width=0.85\textwidth" {
+    di as result "PASS: Test 19 - slidegraph export with custom path() and options() succeeded"
+    local ++n_pass
+    capture erase "test19_beamer.tex"
+}
+else {
+    di as error "FAIL: Test 19 - slidegraph export custom path/options failed"
+    local ++n_fail
+}
+
+// Test 20: slidegraph export overwrite protection (rc 602 without replace)
+slidegraph export using "test20_beamer.tex", replace
+capture slidegraph export using "test20_beamer.tex"
+if _rc == 602 {
+    di as result "PASS: Test 20 - Overwrite protection raised rc 602 without replace"
+    local ++n_pass
+    capture erase "test20_beamer.tex"
+}
+else {
+    di as error "FAIL: Test 20 - Expected rc 602 for existing file without replace"
+    local ++n_fail
+}
+
+// Test 21: slidegraph clear
+slidegraph clear
+if `"$SG_N"' == "" & `"$SG_patterns"' == "" {
+    di as result "PASS: Test 21 - slidegraph clear properly wiped configuration globals"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 21 - Globals still present after clear"
     local ++n_fail
 }
 

@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 1.2.0  05nov2026}{...}
+{* *! version 1.3.0  05nov2026}{...}
 {viewerjumpto "Syntax" "slidegraph##syntax"}{...}
 {viewerjumpto "Description" "slidegraph##description"}{...}
 {viewerjumpto "Options" "slidegraph##options"}{...}
@@ -17,27 +17,51 @@
 {title:Syntax}
 
 {p 4 8 2}
-Configure slide layers:
+1. Configure slide layers with explicit patterns:
 
 {p 8 16 2}
-{cmd:slidegraph set}{cmd:,} {cmdab:pat:terns(}{it:color1 pat1 color2 pat2 ...}{cmd:)} [{cmd:off(}{it:#}{cmd:)}]
+{cmd:slidegraph set}{cmd:,} {cmdab:pat:terns(}{it:color1 pat1 color2 pat2 ...}{cmd:)} [{cmd:off(}{it:#}{cmd:)} {cmd:dim(}{it:#}{cmd:)}]
 
 {p 4 8 2}
-Execute multi-frame build:
+2. Configure slide layers with preset shorthands:
 
 {p 8 16 2}
-{cmd:slidegraph} [{cmd:,} {cmd:stub(}{it:name}{cmd:)} {cmd:saving(}{it:filename}{cmd:)}] {cmd::} {it:graph_command}
+{cmd:slidegraph set}{cmd:,} {cmdab:col:ors(}{it:color1 color2 ...}{cmd:)} {cmdab:cum:ulative}|{cmdab:spot:light} [{cmd:off(}{it:#}{cmd:)} {cmd:dim(}{it:#}{cmd:)}]
 
-{synoptset 22 tabbed}{...}
+{p 4 8 2}
+3. Execute multi-frame build:
+
+{p 8 16 2}
+{cmd:slidegraph} [{cmd:,} {cmd:stub(}{it:name}{cmd:)} {cmd:saving(}{it:filename}{cmd:)} {cmd:full}] {cmd::} {it:graph_command}
+
+{p 4 8 2}
+4. Export LaTeX Beamer overlay code:
+
+{p 8 16 2}
+{cmd:slidegraph export} [{it:using filename.tex}] [{cmd:,} {cmd:path(}{it:string}{cmd:)} {cmd:saving(}{it:filename}{cmd:)} {cmd:options(}{it:string}{cmd:)} {cmd:replace}]
+
+{synoptset 24 tabbed}{...}
 {synopthdr}
 {synoptline}
 {syntab:Main (slidegraph)}
 {synopt :{opt stub(name)}}graph name prefix in memory; default is {cmd:slide}{p_end}
 {synopt :{opt saving(filename)}}save or export individual frames using automatic extension detection (e.g., {cmd:.pdf}, {cmd:.png}, {cmd:.gph}){p_end}
+{synopt :{opt full}}also create an unsuffixed full figure (all series visible at 100%) in memory and on disk{p_end}
 
 {syntab:Configuration (slidegraph set)}
-{synopt :{opt pat:terns(string)}}space-delimited list of {it:color_token binary_pattern} pairs (required){p_end}
+{synopt :{opt pat:terns(string)}}space-delimited list of {it:color_token pattern} pairs (patterns can use {cmd:0}=off, {cmd:1}=dim, {cmd:2}=focus){p_end}
+{synopt :{opt col:ors(string)}}space-delimited list of series color tokens to be sequenced by preset{p_end}
+{synopt :{opt cum:ulative}}preset for progressive revelation (frame 1 shows series 1; frame 2 shows 1 & 2; etc. with previous series staying visible){p_end}
+{synopt :{opt spot:light}}preset for narrative focus (active series at 100%, previous series dimmed to {opt dim()}, future series off){p_end}
 {synopt :{opt off(#)}}opacity percentage integer for hidden series (0-100); default is {cmd:0} ({cmd:%0}){p_end}
+{synopt :{opt dim(#)}}opacity percentage integer for dimmed/background series (0-100); default is {cmd:20} ({cmd:%20}){p_end}
+
+{syntab:Export (slidegraph export)}
+{synopt :{it:using filename.tex}}target {cmd:.tex} file path; default is {it:saving_stem.tex}{p_end}
+{synopt :{opt path(string)}}custom relative/absolute image directory to prepend in LaTeX {cmd:\includegraphics} commands{p_end}
+{synopt :{opt saving(filename)}}override saved image filename stem and extension{p_end}
+{synopt :{opt options(string)}}options passed inside {cmd:\includegraphics[...]}; default is {cmd:width=\linewidth}{p_end}
+{synopt :{opt replace}}overwrite existing {cmd:.tex} file{p_end}
 {synoptline}
 
 
@@ -52,15 +76,25 @@ Execute multi-frame build:
 In traditional slide builds, omitting data series from early frames causes Stata to recalculate axis
 ranges, change legend bounding boxes, and shift margins across frames. {cmd:slidegraph} solves this
 problem by plotting all series in every single frame and modulating visibility using Stata's native opacity
-modifiers (e.g., turning {cmd:navy} into {cmd:navy%0} when hidden, or {cmd:navy%5} when dimmed).
+modifiers (e.g., turning {cmd:navy} into {cmd:navy%0} when hidden, or {cmd:navy%20} when dimmed).
 As a result, axes, ticks, labels, and legends remain 100% stationary throughout the build sequence.
+
+{pstd}
+{cmd:slidegraph} supports 3-state narrative storytelling:
+{break}
+- {cmd:2}: Focus / full opacity (series under active discussion).
+{break}
+- {cmd:1}: Dimmed ghost context ({opt dim(#)}, series already introduced but de-emphasized).
+{break}
+- {cmd:0}: Off / hidden ({opt off(#)}, series not yet introduced).
+{break}
+When patterns contain only {cmd:0} and {cmd:1} (and no {cmd:2}), {cmd:1} defaults to full opacity and {cmd:0} to off, preserving full backwards compatibility.
 
 {pstd}
 All graph options (e.g., {cmd:title()}, {cmd:legend()}, {cmd:aspect()}) are specified
 directly within the {it:graph_command} after the colon. While {cmd:twoway} is the most common use case,
 {cmd:slidegraph} works equally well with any Stata graph command that supports series colors, such as
-{cmd:graph bar}, {cmd:graph hbar}, {cmd:graph dot}, and {cmd:graph box}. {cmd:slidegraph} manages frame sequencing,
-color opacity substitution, distinct memory naming, and automatic file export.
+{cmd:graph bar}, {cmd:graph hbar}, {cmd:graph dot}, and {cmd:graph box}.
 
 
 {marker options}{...}
@@ -82,18 +116,39 @@ The action is determined automatically by inspecting the file postfix:
 - {cmd:.gph} (or omitting an extension): automatically calls {cmd:graph save}.
 
 {phang}
-{opt patterns(string)} specifies the series visibility sequence using paired color tokens and binary strings.
+{opt full} instructs {cmd:slidegraph} to also render an unsuffixed full figure ({it:stub} in memory and {it:filename.ext} on disk)
+where all series are plotted at 100% opacity without modification. This allows generating both paper figures and slide animation frames
+from a single graph command.
+
+{phang}
+{opt patterns(string)} specifies explicit series visibility sequences using paired color tokens and ternary/binary strings.
 Both named color styles (e.g., {cmd:navy}, {cmd:cranberry}) and custom RGB values (e.g., {cmd:"255 0 0"}) are supported.
-RGB color triples must be enclosed in quotes (e.g., {cmd:patterns("255 0 0" 11 "0 128 255" 01)}).
+RGB color triples must be enclosed in quotes (e.g., {cmd:patterns("255 0 0" 21 "0 128 255" 02)}).
 When an RGB color is detected, {cmd:slidegraph} automatically places the opacity modifier inside the quotes (e.g., {cmd:"255 0 0 %0"}),
 as required by Stata's syntax, and issues a warning that RGB formatting may be sensitive to spacing.
-All binary patterns must contain only {cmd:0} and {cmd:1} and must have identical length {it:N} (the total frame count).
+
+{phang}
+{opt colors(string)} specifies a list of color tokens to sequence using a preset shorthand ({opt cumulative} or {opt spotlight}).
+
+{phang}
+{opt cumulative} generates progressive revelation patterns where each series appears in turn and remains on at 100% opacity for all subsequent frames.
+
+{phang}
+{opt spotlight} generates narrative focus patterns where each series is highlighted at 100% opacity during its active frame,
+previous series are kept visible but dimmed to {opt dim(#)}, and subsequent series remain off at {opt off(#)}.
 
 {phang}
 {opt off(#)} specifies the opacity percentage integer applied when a bit is {cmd:0}. The value must be an integer between 0 and 100.
 The default is {cmd:0} (which becomes {cmd:%0}, fully transparent).
-Alternatively, a dimming percentage such as {cmd:off(10)} or {cmd:off(25)} can be supplied to de-emphasize inactive series rather than
-hiding them completely.
+
+{phang}
+{opt dim(#)} specifies the opacity percentage integer applied when a bit is {cmd:1} in 3-state patterns. The value must be an integer between 0 and 100.
+The default is {cmd:20} (which becomes {cmd:%20}, dimmed ghost context).
+
+{phang}
+{opt path(string)} in {cmd:slidegraph export} specifies a custom relative or absolute directory path to prepend in LaTeX {cmd:\includegraphics} commands.
+{cmd:slidegraph} strips out any local directory components from the saved image filename and substitutes this path, solving relative path mismatches
+between Stata working directories and LaTeX presentation source files.
 
 
 {marker examples}{...}
@@ -102,25 +157,21 @@ hiding them completely.
 {pstd}Load example data:{p_end}
 {phang2}{cmd:. sysuse auto, clear}{p_end}
 
-{pstd}1. Two-frame build with titles directly in twoway:{p_end}
-{phang2}{cmd:. slidegraph set, patterns(navy 11 cranberry 01)}{p_end}
+{pstd}1. Two-frame build with shorthand cumulative preset:{p_end}
+{phang2}{cmd:. slidegraph set, colors(navy cranberry) cumulative}{p_end}
 {phang2}{cmd:. slidegraph : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)), title("Price vs MPG by Foreign Status")}{p_end}
 
-{pstd}2. Four-frame build with custom stub and automatic PDF export:{p_end}
-{phang2}{cmd:. slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(0)}{p_end}
-{phang2}{cmd:. slidegraph, stub(build4) saving(build.pdf) : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg if foreign==0, lcolor(midblue)) (lfit price mpg if foreign==1, lcolor(orange)), title("Price vs MPG with Fits")}{p_end}
+{pstd}2. Three-frame build with spotlight focus and ghost dimming:{p_end}
+{phang2}{cmd:. slidegraph set, colors(navy cranberry midblue) spotlight dim(25)}{p_end}
+{phang2}{cmd:. slidegraph, stub(spot) : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg, lcolor(midblue))}{p_end}
 
-{pstd}3. Custom RGB colors build:{p_end}
-{phang2}{cmd:. slidegraph set, patterns("230 60 60" 11 "40 120 220" 01) off(0)}{p_end}
-{phang2}{cmd:. slidegraph, stub(rgb_demo) : twoway (scatter price mpg if foreign==0, mcolor("230 60 60")) (scatter price mpg if foreign==1, mcolor("40 120 220")), title("Price vs MPG with RGB")}{p_end}
+{pstd}3. Combined slide sequence + standalone paper figure + LaTeX export:{p_end}
+{phang2}{cmd:. slidegraph set, colors(navy cranberry midblue) cumulative}{p_end}
+{phang2}{cmd:. slidegraph, stub(fig1) saving(output/fig1.pdf) full : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg, lcolor(midblue)), title("Price vs MPG Progression")}{p_end}
+{phang2}{cmd:. slidegraph export using "fig1_slides.tex", path("figures/slides") replace}{p_end}
 
-{pstd}4. Layered bar chart ({cmd:graph bar}):{p_end}
-{phang2}{cmd:. slidegraph set, patterns(navy 11 cranberry 01)}{p_end}
-{phang2}{cmd:. slidegraph, stub(bar_demo) : graph bar (mean) price (mean) mpg, bar(1, color(navy)) bar(2, color(cranberry)) title("Mean Comparison")}{p_end}
-
-{pstd}5. Layered box plot ({cmd:graph box}):{p_end}
-{phang2}{cmd:. slidegraph set, patterns(navy 11 cranberry 01)}{p_end}
-{phang2}{cmd:. slidegraph, stub(box_demo) : graph box price weight, box(1, color(navy)) box(2, color(cranberry)) title("Distribution Comparison")}{p_end}
+{pstd}In your LaTeX Beamer presentation, simply insert:{p_end}
+{phang2}{cmd:\input{fig1_slides.tex}}{p_end}
 
 
 {marker results}{...}
@@ -134,12 +185,24 @@ hiding them completely.
 {synopt:{cmd:r(N)}}total number of frames{p_end}
 {synopt:{cmd:r(npairs)}}number of color/pattern pairs{p_end}
 {synopt:{cmd:r(any_rgb)}}1 if custom RGB colors detected, 0 otherwise{p_end}
+{synopt:{cmd:r(has_2)}}1 if 3-state patterns active, 0 otherwise{p_end}
+{synopt:{cmd:r(off_val)}}off opacity percentage integer{p_end}
+{synopt:{cmd:r(dim_val)}}dim opacity percentage integer{p_end}
 
 {p2col 5 20 24 2: Macros}{p_end}
 {synopt:{cmd:r(patterns)}}raw patterns string{p_end}
-{synopt:{cmd:r(off)}}off modifier{p_end}
+{synopt:{cmd:r(off)}}off modifier (e.g. {cmd:%0}){p_end}
+{synopt:{cmd:r(dim)}}dim modifier (e.g. {cmd:%20}){p_end}
 
 {pstd}
-Configuration is persisted in global macros ({cmd:$SG_patterns}, {cmd:$SG_N}, {cmd:$SG_off}, {cmd:$SG_npairs}, {cmd:$SG_any_rgb}, {cmd:$SG_color_*}, {cmd:$SG_pat_*})
-so it remains available across subsequent commands.
+{cmd:slidegraph export} stores the following in {cmd:r()}:
+
+{synoptset 20 tabbed}{...}
+{p2col 5 20 24 2: Scalars}{p_end}
+{synopt:{cmd:r(N)}}total number of overlay frames{p_end}
+
+{p2col 5 20 24 2: Macros}{p_end}
+{synopt:{cmd:r(file)}}path to generated {cmd:.tex} file{p_end}
+{synopt:{cmd:r(path)}}custom LaTeX image path prefix{p_end}
+{synopt:{cmd:r(options)}}options passed to {cmd:\includegraphics}{p_end}
 {p2colreset}{...}
