@@ -1,4 +1,4 @@
-*! version 1.1.0  05nov2026
+*! version 1.2.0  05nov2026
 *! slidegraph: Automated stepped/layered graph generation for presentations
 *! Author: Aaron
 *! Program architecture: slidegraph set & slidegraph
@@ -51,7 +51,7 @@ end
 // -----------------------------------------------------------------------------
 program define slidegraph_set, rclass
     version 15.0
-    syntax , patterns(string) [off(string)]
+    syntax , patterns(string asis) [off(string)]
 
     // Default off-modifier
     if `"`off'"' == "" {
@@ -67,6 +67,18 @@ program define slidegraph_set, rclass
         di as error "option patterns() required"
         exit 198
     }
+
+    // Check for unquoted RGB colors (e.g. 255 0 0 11 ...)
+    if `ntokens' >= 4 {
+        local w1 : word 1 of `patterns'
+        local w2 : word 2 of `patterns'
+        local w3 : word 3 of `patterns'
+        if real("`w1'") != . & real("`w2'") != . & real("`w3'") != . {
+            di as error `"unquoted RGB color detected in patterns(); RGB colors must be enclosed in quotes, e.g. patterns("`w1' `w2' `w3'" <pattern> ...)"'
+            exit 198
+        }
+    }
+
     if mod(`ntokens', 2) != 0 {
         di as error "patterns() must contain an even number of tokens: <color_token> <binary_pattern> pairs"
         exit 198
@@ -74,6 +86,7 @@ program define slidegraph_set, rclass
 
     local npairs = `ntokens' / 2
     local N = 0
+    local any_rgb = 0
 
     // Validate pairs
     forvalues p = 1/`npairs' {
@@ -103,6 +116,18 @@ program define slidegraph_set, rclass
                 exit 198
             }
         }
+
+        // Detect if color is RGB
+        mata: st_local("is_rgb", strofreal(_sg_is_rgb(st_local("color"), .)))
+        if `is_rgb' {
+            local any_rgb = 1
+            di as text "{p 0 4 2}{bf:warning:} RGB color detected (`color'); using RGB opacity modifiers in Stata requires placing the modifier inside quotes (e.g., " as result `""`color' `off'""' as text "), which can be sensitive to formatting and spacing. Named color styles are recommended, but proceeding anyway.{p_end}"
+        }
+
+        // Store pair information
+        global SG_color_`p'  `"`color'"'
+        global SG_pat_`p'    `"`pat'"'
+        global SG_is_rgb_`p' `is_rgb'
     }
 
     // Store configuration in global macros for state persistence
@@ -110,12 +135,14 @@ program define slidegraph_set, rclass
     global SG_N        `N'
     global SG_off      `"`off'"'
     global SG_npairs   `npairs'
+    global SG_any_rgb  `any_rgb'
 
     // Return values in r()
-    return scalar N = `N'
-    return scalar npairs = `npairs'
+    return scalar N       = `N'
+    return scalar npairs  = `npairs'
+    return scalar any_rgb = `any_rgb'
     return local patterns `"`patterns'"'
-    return local off `"`off'"'
+    return local off      `"`off'"'
 
     di as text "slidegraph configuration set: `npairs' pattern(s) across `N' frame(s), off modifier: " as result "`off'"
 end
@@ -127,7 +154,7 @@ program define slidegraph_run, rclass
     version 15.0
 
     // Check if configuration exists
-    if "$SG_N" == "" | "$SG_patterns" == "" {
+    if `"$SG_N"' == "" | `"$SG_patterns"' == "" {
         di as error "no slidegraph configuration found; run {bf:slidegraph set} first"
         exit 198
     }
@@ -173,15 +200,13 @@ program define slidegraph_run, rclass
 
         // Apply visibility modifications for frame i
         forvalues p = 1/`npairs' {
-            local c_idx = 2 * `p' - 1
-            local pat_idx = 2 * `p'
-            local color : word `c_idx' of $SG_patterns
-            local pat   : word `pat_idx' of $SG_patterns
+            local color `"${SG_color_`p'}"'
+            local pat   `"${SG_pat_`p'}"'
 
             local bit = substr("`pat'", `i', 1)
             if "`bit'" == "0" {
-                // Dim/hide color using word-boundary replacement
-                local cur_cmd = ustrregexra(`"`cur_cmd'"', "\b" + "`color'" + "\b", "`color'" + "`off'")
+                // Dim/hide color using Mata helper (handles named & RGB colors)
+                mata: _sg_replace_color(st_local("cur_cmd"), st_local("color"), st_local("off"), "cur_cmd")
             }
         }
 
@@ -222,7 +247,7 @@ end
 // -----------------------------------------------------------------------------
 program define slidegraph_clear
     version 15.0
-    macro drop SG_patterns SG_N SG_off SG_npairs
+    macro drop SG_*
     di as text "slidegraph configuration cleared"
 end
 
@@ -231,15 +256,18 @@ end
 // -----------------------------------------------------------------------------
 program define slidegraph_query
     version 15.0
-    if "$SG_N" == "" {
+    if `"$SG_N"' == "" {
         di as text "No slidegraph configuration is currently active."
         di as text "Use {bf:slidegraph set, patterns(...)} to set up a configuration."
     }
     else {
         di as text "Active slidegraph configuration:"
-        di as text "  Frames (N)   : {res}$SG_N}"
-        di as text "  Patterns     : {res}$SG_patterns}"
-        di as text "  Off modifier : {res}$SG_off}"
+        di as text "  Frames (N)   : " as result "$SG_N"
+        di as text "  Patterns     : " as result `"$SG_patterns"'
+        di as text "  Off modifier : " as result `"$SG_off"'
+        if "$SG_any_rgb" == "1" {
+            di as text "  RGB detected : " as result "yes (inside-quote modifier applied)"
+        }
     }
 end
 
@@ -248,6 +276,51 @@ end
 // -----------------------------------------------------------------------------
 mata:
 mata set matastrict on
+
+// Check if string represents an RGB color triple (0-255 0-255 0-255)
+real scalar _sg_is_rgb(string scalar color, real vector rgb_vals)
+{
+    string scalar clean
+    real scalar r, g, b
+
+    clean = strtrim(subinstr(color, char(34), ""))
+    if (ustrregexm(clean, "^\s*([0-9]{1,3})\s+([0-9]{1,3})\s+([0-9]{1,3})\s*$")) {
+        r = strtoreal(ustrregexs(1))
+        g = strtoreal(ustrregexs(2))
+        b = strtoreal(ustrregexs(3))
+        if (r >= 0 & r <= 255 & g >= 0 & g <= 255 & b >= 0 & b <= 255) {
+            rgb_vals = (r, g, b)
+            return(1)
+        }
+    }
+    return(0)
+}
+
+// Replace color token with opacity modifier:
+// For RGB: moves opacity modifier inside quotes: "R G B" -> "R G B %0"
+// For named style: appends opacity modifier: navy -> navy%0
+void _sg_replace_color(string scalar cmd_in, string scalar color, string scalar off, string scalar s_out)
+{
+    real vector rgb
+    string scalar r_str, g_str, b_str, pat, rep, q
+
+    rgb = J(1, 0, .)
+    q = char(34)
+    if (_sg_is_rgb(color, rgb)) {
+        r_str = strofreal(rgb[1])
+        g_str = strofreal(rgb[2])
+        b_str = strofreal(rgb[3])
+        // Match quotes around R G B with flexible spacing and optional intensity multiplier
+        pat = q + "(\s*" + r_str + "\s+" + g_str + "\s+" + b_str + "(?:\*[0-9.]+)?\s*)" + q
+        rep = q + "$1 " + off + q
+        st_local(s_out, ustrregexra(cmd_in, pat, rep))
+    }
+    else {
+        pat = "\b" + color + "\b"
+        rep = color + off
+        st_local(s_out, ustrregexra(cmd_in, pat, rep))
+    }
+}
 
 // Inject name(..., replace) into command without syntax error from multiple commas
 void _slidegraph_inject_name(string scalar raw, string scalar name_opt, string scalar s_out)

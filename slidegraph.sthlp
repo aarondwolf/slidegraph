@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 1.1.0  05nov2026}{...}
+{* *! version 1.2.0  05nov2026}{...}
 {viewerjumpto "Syntax" "slidegraph##syntax"}{...}
 {viewerjumpto "Description" "slidegraph##description"}{...}
 {viewerjumpto "Options" "slidegraph##options"}{...}
@@ -81,8 +81,10 @@ The action is determined automatically by inspecting the file postfix:
 
 {phang}
 {opt patterns(string)} specifies the series visibility sequence using paired color tokens and binary strings.
-For example, {cmd:patterns(navy 11 cranberry 01)} defines a 2-frame build where the {cmd:navy} series is
-visible in both frames ({cmd:11}) and the {cmd:cranberry} series is hidden in frame 1 and appears in frame 2 ({cmd:01}).
+Both named color styles (e.g., {cmd:navy}, {cmd:cranberry}) and custom RGB values (e.g., {cmd:"255 0 0"}) are supported.
+RGB color triples must be enclosed in quotes (e.g., {cmd:patterns("255 0 0" 11 "0 128 255" 01)}).
+When an RGB color is detected, {cmd:slidegraph} automatically places the opacity modifier inside the quotes (e.g., {cmd:"255 0 0 %0"}),
+as required by Stata's syntax, and issues a warning that RGB formatting may be sensitive to spacing.
 All binary patterns must contain only {cmd:0} and {cmd:1} and must have identical length {it:N} (the total frame count).
 
 {phang}
@@ -105,6 +107,10 @@ hiding them completely.
 {phang2}{cmd:. slidegraph set, patterns(navy 1111 cranberry 0111 midblue 0011 orange 0001) off(%0)}{p_end}
 {phang2}{cmd:. slidegraph, stub(build4) saving(build.pdf) : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg if foreign==0, lcolor(midblue)) (lfit price mpg if foreign==1, lcolor(orange)), title("Price vs MPG with Fits")}{p_end}
 
+{pstd}3. Custom RGB colors build:{p_end}
+{phang2}{cmd:. slidegraph set, patterns("230 60 60" 11 "40 120 220" 01) off(%0)}{p_end}
+{phang2}{cmd:. slidegraph, stub(rgb_demo) : twoway (scatter price mpg if foreign==0, mcolor("230 60 60")) (scatter price mpg if foreign==1, mcolor("40 120 220")), title("Price vs MPG with RGB")}{p_end}
+
 
 {marker results}{...}
 {title:Stored results}
@@ -116,12 +122,13 @@ hiding them completely.
 {p2col 5 20 24 2: Scalars}{p_end}
 {synopt:{cmd:r(N)}}total number of frames{p_end}
 {synopt:{cmd:r(npairs)}}number of color/pattern pairs{p_end}
+{synopt:{cmd:r(any_rgb)}}1 if custom RGB colors detected, 0 otherwise{p_end}
 
 {p2col 5 20 24 2: Macros}{p_end}
 {synopt:{cmd:r(patterns)}}raw patterns string{p_end}
 {synopt:{cmd:r(off)}}off modifier{p_end}
 
 {pstd}
-Configuration is persisted in global macros ({cmd:$SG_patterns}, {cmd:$SG_N}, {cmd:$SG_off}, {cmd:$SG_npairs})
+Configuration is persisted in global macros ({cmd:$SG_patterns}, {cmd:$SG_N}, {cmd:$SG_off}, {cmd:$SG_npairs}, {cmd:$SG_any_rgb}, {cmd:$SG_color_*}, {cmd:$SG_pat_*})
 so it remains available across subsequent commands.
 {p2colreset}{...}

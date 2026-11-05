@@ -14,7 +14,7 @@ sysuse auto, clear
 // Demonstration 1: 2-Slide Build (Domestic -> Foreign)
 // =============================================================================
 di as text _newline(2) "{hline 70}"
-di as text "DEMONSTRATION 1: 2-Slide Build"
+di as text "DEMONSTRATION 1: 2-Slide Build (Named Colors)"
 di as text "{hline 70}"
 
 // Step 1: Configure slide build
@@ -67,6 +67,28 @@ forvalues i = 1/4 {
     capture erase "demo_build_`i'.png"
 }
 
+
+// =============================================================================
+// Demonstration 3: Custom RGB Colors Build ("R G B")
+// =============================================================================
 di as text _newline(2) "{hline 70}"
-di as text "Demonstration completed successfully!"
+di as text "DEMONSTRATION 3: Custom RGB Colors Build"
+di as text "{hline 70}"
+
+// Step 1: Configure build with custom RGB triples (in quotes)
+// slidegraph detects RGB values and places opacity modifiers inside quotes
+slidegraph set, patterns("230 60 60" 11 "40 120 220" 01) off(%0)
+
+// Step 2: Execute graph with RGB colors
+slidegraph, stub(rgb_demo) : twoway ///
+    (scatter price mpg if foreign==0, mcolor("230 60 60"))       ///
+    (scatter price mpg if foreign==1, mcolor("40 120 220")),     ///
+    title("Price vs MPG with Custom RGB Colors")                 ///
+    legend(order(1 "Custom Red (Domestic)" 2 "Custom Blue (Foreign)"))
+
+// Verify RGB graphs in memory
+graph dir rgb_demo*
+
+di as text _newline(2) "{hline 70}"
+di as text "All demonstrations completed successfully!"
 di as text "{hline 70}"

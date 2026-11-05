@@ -19,7 +19,7 @@ In standard Stata workflows, plotting subsets of series across different graphs 
 
 ### The `slidegraph` Solution
 Instead of conditionally omitting series, `slidegraph` **plots all series in every single frame** and modulates their visibility across sequential frames by appending Stata opacity modifiers:
-- Hidden series receive an opacity modifier of `%0` (e.g., `navy%0` or `cranberry%0`).
+- Hidden series receive an opacity modifier of `%0` (e.g., `navy%0` or `"255 0 0 %0"`).
 - Dimmed / de-emphasized series receive partial opacity (e.g., `%5` or `%10`).
 - Visible series retain full opacity.
 
@@ -37,9 +37,11 @@ slidegraph set, patterns(color1 pat1 color2 pat2 ...) [off(string)]
 ```
 
 - **`patterns(string)`**: Space-separated list of `<color_token> <binary_pattern>` pairs.
+  - Supports both standard named color styles (`navy`, `cranberry`, `forest_green`) and custom RGB triples in quotes (`"255 0 0"`, `"0 128 255"`).
   - Every pattern must consist strictly of `0` (hidden/dimmed) and `1` (visible) characters.
   - Every pattern must have the exact same length $N$ (the total frame count).
 - **`off(string)`**: Opacity modifier applied to `0` bits. Defaults to `"%0"`. You can also specify partial dimming (e.g., `off(%10)`).
+- **RGB Color Detection**: If RGB values are detected, `slidegraph` issues a warning alerting the user that RGB modifiers inside quotes (`"R G B %0"`) may be sensitive to spacing, but proceeds seamlessly by dynamically placing the opacity modifier inside the quotes.
 
 ### 2. `slidegraph`
 Executes the stored multi-frame sequence. Users provide standard `twoway` commands after the colon (`:`) with all native graph options.
@@ -61,7 +63,7 @@ slidegraph [, stub(name) saving(filename)] : <twoway graph command>
 
 Run the included demonstration script `slidegraph_demo.do`:
 
-### Demonstration 1: 2-Slide Build
+### Demonstration 1: 2-Slide Build (Named Colors)
 ```stata
 sysuse auto, clear
 
@@ -91,11 +93,24 @@ slidegraph, stub(build) saving(build.png) : twoway                              
     legend(order(1 "Domestic" 2 "Foreign" 3 "Domestic Fit" 4 "Foreign Fit") rows(1))
 ```
 
+### Demonstration 3: Custom RGB Colors
+```stata
+// RGB triples must be enclosed in quotes
+slidegraph set, patterns("230 60 60" 11 "40 120 220" 01) off(%0)
+
+// Opacity modifier is automatically moved inside quotes: "40 120 220 %0"
+slidegraph, stub(rgb_demo) : twoway ///
+    (scatter price mpg if foreign==0, mcolor("230 60 60"))       ///
+    (scatter price mpg if foreign==1, mcolor("40 120 220")),     ///
+    title("Price vs MPG with Custom RGB Colors")                 ///
+    legend(order(1 "Custom Red (Domestic)" 2 "Custom Blue (Foreign)"))
+```
+
 ---
 
 ## State Persistence Note
 
-Stata wipes standard `r()` results whenever a new command runs. `slidegraph set` persists configuration in global macros (`$SG_patterns`, `$SG_N`, `$SG_off`, `$SG_npairs`) so that `slidegraph` can be run repeatedly without having to re-declare configuration every time.
+Stata wipes standard `r()` results whenever a new command runs. `slidegraph set` persists configuration in global macros (`$SG_patterns`, `$SG_N`, `$SG_off`, `$SG_npairs`, `$SG_color_*`, `$SG_pat_*`) so that `slidegraph` can be run repeatedly without having to re-declare configuration every time.
 
 To inspect active configuration:
 ```stata
@@ -117,4 +132,4 @@ Run the included test suite in Stata:
 ```stata
 do test_suite.do
 ```
-Tests verify parameter validation, restriction of twoway options in `slidegraph`, warning detection for `name()`, postfix export for `.png`/`.pdf`, `.gph` graph saving, memory retention, and cleanup.
+Tests verify parameter validation, restriction of twoway options in `slidegraph`, warning detection for `name()`, custom RGB inside-quote opacity modification, unquoted RGB detection, postfix export for `.png`/`.pdf`, `.gph` graph saving, memory retention, and cleanup.
