@@ -425,14 +425,77 @@ else {
     local ++n_fail
 }
 
-// Test 21: slidegraph clear
-slidegraph clear
-if `"$SG_N"' == "" & `"$SG_patterns"' == "" {
-    di as result "PASS: Test 21 - slidegraph clear properly wiped configuration globals"
+// Test 21: Hardened edge cases (unquoted RGB in 2nd slot/colors(), comma in quotes, intensity *#, ./path without .tex)
+capture slidegraph set, patterns(navy 11 255 0 0 01)
+if _rc == 198 {
+    di as result "PASS: Test 21a - Unquoted RGB in 2nd pattern slot rejected with rc 198"
     local ++n_pass
 }
 else {
-    di as error "FAIL: Test 21 - Globals still present after clear"
+    di as error "FAIL: Test 21a - Expected rc 198 for unquoted RGB in 2nd slot, got " _rc
+    local ++n_fail
+}
+
+capture slidegraph set, colors(navy 255 0 0) cumulative
+if _rc == 198 {
+    di as result "PASS: Test 21b - Unquoted RGB in colors() rejected with rc 198"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 21b - Expected rc 198 for unquoted RGB in colors(), got " _rc
+    local ++n_fail
+}
+
+slidegraph set, colors(navy cranberry) cumulative
+capture slidegraph :
+if _rc == 198 {
+    di as result "PASS: Test 21c - Empty command after colon rejected with rc 198"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 21c - Expected rc 198 for empty command after colon, got " _rc
+    local ++n_fail
+}
+
+// Comma inside quotes before options + intensity multiplier (*0.8)
+slidegraph, stub(test21d) saving(t21d.pdf) : twoway ///
+    (scatter price mpg if make != "Ford, Inc.", mcolor(navy*0.8)) ///
+    (scatter price mpg if foreign == 1, mcolor(cranberry*0.9))
+
+capture graph describe test21d_1
+local rc_21d = _rc
+if `rc_21d' == 0 {
+    di as result "PASS: Test 21d - Quoted comma before options and color*# intensity multiplier handled cleanly"
+    local ++n_pass
+    capture erase "t21d_1.pdf"
+    capture erase "t21d_2.pdf"
+}
+else {
+    di as error "FAIL: Test 21d - Failed on quoted comma or intensity multiplier"
+    local ++n_fail
+}
+
+// Relative path with './' and no .tex suffix in using
+slidegraph export using "./test21e_overlay", replace
+capture confirm file "./test21e_overlay.tex"
+if _rc == 0 {
+    di as result "PASS: Test 21e - Relative path './test21e_overlay' properly appended .tex"
+    local ++n_pass
+    capture erase "./test21e_overlay.tex"
+}
+else {
+    di as error "FAIL: Test 21e - './test21e_overlay.tex' not created"
+    local ++n_fail
+}
+
+// Test 22: slidegraph clear
+slidegraph clear
+if `"$SG_N"' == "" & `"$SG_patterns"' == "" {
+    di as result "PASS: Test 22 - slidegraph clear properly wiped configuration globals"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 22 - Globals still present after clear"
     local ++n_fail
 }
 
