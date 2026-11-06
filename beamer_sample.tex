@@ -1,0 +1,43 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{default}
+\usecolortheme{dove}
+\setbeamertemplate{navigation symbols}{}
+
+\title{Presentation Build Example}
+\subtitle{Layered Graphs with \texttt{slidegraph}}
+\author{Aaron Wolf}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Stepped Graph Animation with \texttt{slidegraph}}
+  \begin{columns}[T]
+    \begin{column}{0.42\textwidth}
+      \begin{itemize}
+        \item<1-> \textbf{Frame 1}: Domestic cars only
+        \item<2-> \textbf{Frame 2}: Reveal Foreign cars
+        \item<3-> \textbf{Frame 3}: Overlay fitted trendline
+      \end{itemize}
+      
+      \vspace{1em}
+      \uncover<3->{\small\textit{Notice that the axes, ticks, and legend bounding box remain 100\% stationary throughout.}}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \centering
+      % Pull in the slidegraph-generated overlay sequence:
+      \input{scatter_build_overlays.tex}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Standalone Paper Figure (Full)}
+  \centering
+  % The 'full' option generates the unsuffixed graph for paper / appendix:
+  \includegraphics[width=0.75\linewidth]{scatter_build.pdf}
+\end{frame}
+
+\end{document}

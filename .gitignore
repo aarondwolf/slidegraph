@@ -20,3 +20,10 @@
 __*
 .DS_Store
 Thumbs.db
+
+# LaTeX build auxiliary files
+*.aux
+*.nav
+*.out
+*.snm
+*.toc
