@@ -211,29 +211,27 @@ echoed commands from the Results window and adjust the colors manually.
 {title:Examples}
 
 {pstd}Load example data:{p_end}
-{phang2}{cmd:. sysuse auto, clear}{p_end}
+{phang2}{cmd:. }{stata "sysuse auto, clear"}{p_end}
 
 {pstd}1. Two-frame build with shorthand cumulative preset:{p_end}
-{phang2}{cmd:. slidegraph set, colors(navy cranberry) cumulative}{p_end}
-{phang2}{cmd:. slidegraph : twoway} ///{break}
-    {cmd:(scatter price mpg if foreign==0, mcolor(navy))} ///{break}
-    {cmd:(scatter price mpg if foreign==1, mcolor(cranberry)),} ///{break}
-    {cmd:title("Price vs MPG by Foreign Status")}{p_end}
+{phang2}{cmd:. }{stata "slidegraph set, colors(navy cranberry) cumulative"}{p_end}
+{phang2}{cmd:. }{stata `"slidegraph : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)), title("Price vs MPG by Foreign Status")"'}{p_end}
+{phang2}{cmd:. }{stata "graph dir sg*"}{p_end}
+{phang2}{cmd:. }{stata "graph display sg_1"}{p_end}
+{phang2}{cmd:. }{stata "graph display sg_2"}{p_end}
 
 {pstd}2. Three-frame build with spotlight focus and ghost dimming:{p_end}
-{phang2}{cmd:. slidegraph set, colors(navy cranberry midblue) spotlight dim(25)}{p_end}
-{phang2}{cmd:. slidegraph, stub(spot) : twoway} ///{break}
-    {cmd:(scatter price mpg if foreign==0, mcolor(navy))} ///{break}
-    {cmd:(scatter price mpg if foreign==1, mcolor(cranberry))} ///{break}
-    {cmd:(lfit price mpg, lcolor(midblue))}{p_end}
+{phang2}{cmd:. }{stata "slidegraph set, colors(navy cranberry midblue) spotlight dim(25)"}{p_end}
+{phang2}{cmd:. }{stata `"slidegraph, stub(spot) : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg, lcolor(midblue))"'}{p_end}
+{phang2}{cmd:. }{stata "graph display spot_1"}{p_end}
+{phang2}{cmd:. }{stata "graph display spot_2"}{p_end}
+{phang2}{cmd:. }{stata "graph display spot_3"}{p_end}
 
 {pstd}3. Combined slide sequence + standalone paper figure + LaTeX export:{p_end}
-{phang2}{cmd:. slidegraph set, colors(navy cranberry midblue) cumulative}{p_end}
-{phang2}{cmd:. slidegraph, stub(fig1) saving(output/fig1.pdf) full : twoway} ///{break}
-    {cmd:(scatter price mpg if foreign==0, mcolor(navy))} ///{break}
-    {cmd:(scatter price mpg if foreign==1, mcolor(cranberry))} ///{break}
-    {cmd:(lfit price mpg, lcolor(midblue)), title("Price vs MPG Progression")}{p_end}
-{phang2}{cmd:. slidegraph export using "fig1_slides.tex", path("figures/slides") replace}{p_end}
+{phang2}{cmd:. }{stata "slidegraph set, colors(navy cranberry midblue) cumulative"}{p_end}
+{phang2}{cmd:. }{stata `"slidegraph, stub(fig1) saving(fig1.pdf) full : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg, lcolor(midblue)), title("Price vs MPG Progression")"'}{p_end}
+{phang2}{cmd:. }{stata `"slidegraph export using "fig1_slides.tex", path("figures/slides") replace"'}{p_end}
+{phang2}{cmd:. }{stata `"type "fig1_slides.tex""'}{p_end}
 
 {pstd}In your LaTeX Beamer presentation, simply insert:{p_end}
 {phang2}{cmd:\input{c -(}fig1_slides.tex{c )-}}{p_end}
