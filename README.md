@@ -196,6 +196,34 @@ slidegraph, stub(demo_bar) : graph bar (mean) price (mean) mpg, ///
 
 ---
 
+## Stored Results
+
+`slidegraph` subcommands store values in `r()`:
+
+### `slidegraph`
+- **Scalars:**
+  - `r(N)`: Total number of frames rendered
+- **Macros:**
+  - `r(stub)`: Memory graph name prefix (default `sg`)
+  - `r(cmd_1)`, `r(cmd_2)`, ..., `r(cmd_N)`: Exact expanded Stata command executed for frame $i$
+  - `r(cmd_full)`: Full figure command with all series at 100% opacity (when `full` is specified)
+  - `r(full)`: `1` if `full` was specified
+  - `r(saving)`: User-specified `saving()` target
+  - `r(save_stem)`: Target file stem without extension
+  - `r(save_ext)`: Target file extension
+  - `r(off)`: Effective off opacity modifier (e.g., `%0`)
+  - `r(dim)`: Effective dim opacity modifier (e.g., `%20`)
+
+### `slidegraph set`
+- **Scalars:** `r(N)`, `r(npairs)`, `r(any_rgb)`, `r(has_2)`, `r(off_val)`, `r(dim_val)`
+- **Macros:** `r(patterns)`, `r(off)`, `r(dim)`
+
+### `slidegraph export`
+- **Scalars:** `r(N)` (number of frames written to overlay snippet)
+- **Macros:** `r(file)` (output `.tex` path), `r(path)` (LaTeX relative image path prefix), `r(options)` (options passed inside `\includegraphics[...]`)
+
+---
+
 ## Testing
 
 Run the included automated test suite in Stata:

@@ -258,6 +258,24 @@ echoed commands from the Results window and adjust the colors manually.
 {synopt:{cmd:r(dim)}}dim modifier (e.g. {cmd:%20}){p_end}
 
 {pstd}
+{cmd:slidegraph} stores the following in {cmd:r()}:
+
+{synoptset 20 tabbed}{...}
+{p2col 5 20 24 2: Scalars}{p_end}
+{synopt:{cmd:r(N)}}total number of frames{p_end}
+
+{p2col 5 20 24 2: Macros}{p_end}
+{synopt:{cmd:r(stub)}}memory graph name prefix{p_end}
+{synopt:{cmd:r(cmd_#)}}expanded command executed for frame {it:#} ({cmd:r(cmd_1)}, {cmd:r(cmd_2)}, ...){p_end}
+{synopt:{cmd:r(cmd_full)}}full figure command with all series at 100% (if {opt full} specified){p_end}
+{synopt:{cmd:r(full)}}{cmd:1} if {opt full} specified{p_end}
+{synopt:{cmd:r(saving)}}specified target saving filename{p_end}
+{synopt:{cmd:r(save_stem)}}target saving filename without extension{p_end}
+{synopt:{cmd:r(save_ext)}}target saving file extension{p_end}
+{synopt:{cmd:r(off)}}off modifier (e.g. {cmd:%0}){p_end}
+{synopt:{cmd:r(dim)}}dim modifier (e.g. {cmd:%20}){p_end}
+
+{pstd}
 {cmd:slidegraph export} stores the following in {cmd:r()}:
 
 {synoptset 20 tabbed}{...}
