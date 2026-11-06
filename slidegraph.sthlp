@@ -6,6 +6,7 @@
 {viewerjumpto "Remarks" "slidegraph##remarks"}{...}
 {viewerjumpto "Examples" "slidegraph##examples"}{...}
 {viewerjumpto "Stored results" "slidegraph##results"}{...}
+{viewerjumpto "Author" "slidegraph##author"}{...}
 {title:Title}
 
 {p2colset 5 19 21 2}{...}
@@ -287,3 +288,11 @@ echoed commands from the Results window and adjust the colors manually.
 {synopt:{cmd:r(path)}}custom LaTeX image path prefix{p_end}
 {synopt:{cmd:r(options)}}options passed to {cmd:\includegraphics}{p_end}
 {p2colreset}{...}
+
+
+{marker author}{...}
+{title:Author}
+
+{pstd}
+Aaron Wolf, Northwestern University{break}
+Email: {browse "mailto:aaron.wolf@u.northwestern.edu":aaron.wolf@u.northwestern.edu}{p_end}
