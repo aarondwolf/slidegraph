@@ -31,8 +31,8 @@ slidegraph : twoway ///
     (scatter price mpg if foreign==1, mcolor(cranberry)),   ///
     title("Price vs MPG by Foreign Status")
 
-// Verify graphs in memory
-graph dir slide*
+// Verify graphs in memory (default stub is "sg", creating sg_1, sg_2)
+graph dir sg*
 
 
 // =============================================================================

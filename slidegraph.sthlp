@@ -44,7 +44,7 @@
 {synopthdr}
 {synoptline}
 {syntab:Main (slidegraph)}
-{synopt :{opt stub(name)}}graph name prefix in memory; default is {cmd:slide}{p_end}
+{synopt :{opt stub(name)}}graph name prefix in memory; default is {cmd:sg}{p_end}
 {synopt :{opt saving(filename)}}save or export individual frames using automatic extension detection (e.g., {cmd:.pdf}, {cmd:.png}, {cmd:.gph}){p_end}
 {synopt :{opt full}}also create an unsuffixed full figure (all series visible at 100%) in memory and on disk{p_end}
 
@@ -102,7 +102,7 @@ directly within the {it:graph_command} after the colon. While {cmd:twoway} is th
 
 {phang}
 {opt stub(name)} sets the memory name prefix for the generated graphs ({it:stub_1}, {it:stub_2}, ..., {it:stub_N}).
-The default is {cmd:slide} ({cmd:slide_1}, {cmd:slide_2}, ...).
+The default is {cmd:sg} ({cmd:sg_1}, {cmd:sg_2}, ...).
 {it:Note:} Avoid specifying {cmd:name()} inside the {it:graph_command}, as {cmd:slidegraph} injects its own
 frame names based on {opt stub()}. If a {cmd:name()} option is detected in the graph command, a warning is displayed.
 

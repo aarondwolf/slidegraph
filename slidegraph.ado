@@ -242,7 +242,7 @@ program define slidegraph_run, rclass
     syntax [, stub(string) saving(string) full]
 
     if `"`stub'"' == "" {
-        local stub "slide"
+        local stub "sg"
     }
 
     // Warn (without exiting) if name() appears in the user's graph command

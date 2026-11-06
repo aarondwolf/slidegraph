@@ -141,11 +141,30 @@ local rc1 = _rc
 capture graph describe test7_2
 local rc2 = _rc
 if `rc1' == 0 & `rc2' == 0 {
-    di as result "PASS: Test 7 - 2-frame build created test7_1 and test7_2 in memory"
+    di as result "PASS: Test 7a - 2-frame build created test7_1 and test7_2 in memory"
     local ++n_pass
 }
 else {
-    di as error "FAIL: Test 7 - Graphs not found in memory"
+    di as error "FAIL: Test 7a - Graphs not found in memory"
+    local ++n_fail
+}
+
+// Test 7b: Default stub is "sg"
+slidegraph : twoway ///
+    (scatter price mpg if foreign==0, mcolor(navy))   ///
+    (scatter price mpg if foreign==1, mcolor(cranberry))
+
+local ret_stub "`r(stub)'"
+capture graph describe sg_1
+local rc_sg1 = _rc
+capture graph describe sg_2
+local rc_sg2 = _rc
+if `rc_sg1' == 0 & `rc_sg2' == 0 & "`ret_stub'" == "sg" {
+    di as result "PASS: Test 7b - Default stub is 'sg', created sg_1 and sg_2 in memory"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 7b - Default stub 'sg' graphs not found in memory or r(stub) != sg"
     local ++n_fail
 }
 

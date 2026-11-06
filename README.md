@@ -99,7 +99,7 @@ slidegraph [, stub(name) saving(filename) full] : <graph command>
 
 - **Any Stata graph command supported**: Works with `twoway`, `graph bar`, `graph box`, `graph hbar`, `graph dot`, etc.
 - **No graph options before colon**: Users specify all graph options (e.g., `title(...)`, `subtitle(...)`, `legend(...)`) directly within their graph command after the colon.
-- **`stub(name)`**: Prefix for memory graph names (`stub_1`, `stub_2`, ..., `stub_N`). Defaults to `slide`.
+- **`stub(name)`**: Prefix for memory graph names (`stub_1`, `stub_2`, ..., `stub_N`). Defaults to `sg`.
 - **`saving(filename)`**: Unified saving and exporting option that automatically inspects the file postfix/extension:
   - `.pdf`, `.png`, `.svg`, `.eps`, `.tif` $\to$ automatically calls `graph export "filename_i.ext", name(stub_i) replace`.
   - `.gph` (or omitting an extension) $\to$ automatically calls `graph save stub_i "filename_i.gph", replace`.
