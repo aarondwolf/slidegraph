@@ -229,7 +229,7 @@ echoed commands from the Results window and adjust the colors manually.
 
 {pstd}3. Combined slide sequence + standalone paper figure + LaTeX export:{p_end}
 {phang2}{cmd:. }{stata "slidegraph set, colors(navy cranberry midblue) cumulative"}{p_end}
-{phang2}{cmd:. }{stata `"slidegraph, stub(fig1) saving(fig1.pdf) full : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg, lcolor(midblue)), title("Price vs MPG Progression")"'}{p_end}
+{phang2}{cmd:. }{stata `"slidegraph, stub(fig1) saving(fig1.pdf) full : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg, lcolor(midblue))"'}{p_end}
 {phang2}{cmd:. }{stata `"slidegraph export using "fig1_slides.tex", path("figures/slides") replace"'}{p_end}
 {phang2}{cmd:. }{stata `"type "fig1_slides.tex""'}{p_end}
 
