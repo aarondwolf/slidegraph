@@ -10,7 +10,7 @@ Install directly via `net install` from GitHub or a local clone:
 
 ```stata
 // From GitHub:
-net install slidegraph, from("https://raw.githubusercontent.com/aaronwolf/slidegraph/master") replace
+net install slidegraph, from("https://aarondwolf.github.io/slidegraph") replace
 
 // Or from a local directory:
 net install slidegraph, from("C:/path/to/slidegraph") replace
