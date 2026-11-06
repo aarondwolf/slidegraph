@@ -221,13 +221,3 @@ slidegraph, stub(demo_bar) : graph bar (mean) price (mean) mpg, ///
 ### `slidegraph export`
 - **Scalars:** `r(N)` (number of frames written to overlay snippet)
 - **Macros:** `r(file)` (output `.tex` path), `r(path)` (LaTeX relative image path prefix), `r(options)` (options passed inside `\includegraphics[...]`)
-
----
-
-## Testing
-
-Run the included automated test suite in Stata:
-```stata
-do tests/test_suite.do
-```
-Tests cover syntax validation, presets (`cumulative`, `spotlight`), 3-state dimming, `full` figure generation, postfix export (`.png`, `.pdf`, `.gph`), RGB quote detection, `slidegraph export` LaTeX file generation, and `net install` package validation.
