@@ -4,7 +4,8 @@
 ==============================================================================*/
 
 clear all
-adopath ++ .
+adopath ++ "."
+adopath ++ ".."
 
 local n_pass = 0
 local n_fail = 0
@@ -496,6 +497,18 @@ if `"$SG_N"' == "" & `"$SG_patterns"' == "" {
 }
 else {
     di as error "FAIL: Test 22 - Globals still present after clear"
+    local ++n_fail
+}
+
+// Test 23: Stata package files (stata.toc & slidegraph.pkg) for net install
+local pkg_dir = cond(fileexists("slidegraph.pkg"), "`c(pwd)'", "`c(pwd)'/..")
+capture net describe slidegraph, from("`pkg_dir'")
+if _rc == 0 {
+    di as result "PASS: Test 23 - net describe slidegraph validated stata.toc and slidegraph.pkg"
+    local ++n_pass
+}
+else {
+    di as error "FAIL: Test 23 - net describe slidegraph failed with rc " _rc
     local ++n_fail
 }
 

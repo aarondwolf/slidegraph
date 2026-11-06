@@ -27,3 +27,4 @@ Thumbs.db
 *.out
 *.snm
 *.toc
+!stata.toc

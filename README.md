@@ -4,6 +4,20 @@ Automate stepped, layered figures for slide presentations (such as LaTeX Beamer 
 
 ---
 
+## Installation
+
+Install directly via `net install` from GitHub or a local clone:
+
+```stata
+// From GitHub:
+net install slidegraph, from("https://raw.githubusercontent.com/aaronwolf/slidegraph/master") replace
+
+// Or from a local directory:
+net install slidegraph, from("C:/path/to/slidegraph") replace
+```
+
+---
+
 ## The Core Concept
 
 When presenting empirical results or model progressions in slide decks, speakers frequently build complex graphs layer by layer:
@@ -81,7 +95,7 @@ slidegraph export [using filename.tex] [, path(string) saving(filename) options(
 
 ## Quickstart & Demonstrations
 
-Run the included demonstration script `slidegraph_demo.do`:
+Run the included demonstration script `examples/slidegraph_demo.do` (or see the complete LaTeX Beamer example in `examples/beamer/`):
 
 ### 1. Progressive Build with Shorthand `cumulative` Preset
 ```stata
@@ -160,6 +174,6 @@ slidegraph, stub(demo_bar) : graph bar (mean) price (mean) mpg, ///
 
 Run the included automated test suite in Stata:
 ```stata
-do test_suite.do
+do tests/test_suite.do
 ```
-Tests cover syntax validation, presets (`cumulative`, `spotlight`), 3-state dimming, `full` figure generation, postfix export (`.png`, `.pdf`, `.gph`), RGB quote detection, and `slidegraph export` LaTeX file generation.
+Tests cover syntax validation, presets (`cumulative`, `spotlight`), 3-state dimming, `full` figure generation, postfix export (`.png`, `.pdf`, `.gph`), RGB quote detection, `slidegraph export` LaTeX file generation, and `net install` package validation.

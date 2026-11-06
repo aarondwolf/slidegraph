@@ -3,7 +3,9 @@
   Generates sample slidegraph PDF frames and Beamer overlay snippet
 ==============================================================================*/
 clear all
-adopath ++ .
+adopath ++ "."
+adopath ++ ".."
+adopath ++ "../.."
 sysuse auto, clear
 
 // 3-frame cumulative build: Domestic -> Foreign -> Fit

@@ -5,7 +5,8 @@
 
 // Clear environment and ensure local directory is in adopath
 clear all
-adopath ++ .
+adopath ++ "."
+adopath ++ ".."
 
 // Load auto dataset
 sysuse auto, clear

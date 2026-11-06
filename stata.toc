@@ -1,0 +1,3 @@
+v 3
+d Aaron Wolf, Northwestern University (aaron.wolf@u.northwestern.edu)
+p slidegraph Automate stepped and layered graphs for presentation slides
