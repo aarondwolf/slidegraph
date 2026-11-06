@@ -20,25 +20,29 @@
 1. Configure slide layers with explicit patterns:
 
 {p 8 16 2}
-{cmd:slidegraph set}{cmd:,} {cmdab:pat:terns(}{it:color1 pat1 color2 pat2 ...}{cmd:)} [{cmd:off(}{it:#}{cmd:)} {cmd:dim(}{it:#}{cmd:)}]
+{cmd:slidegraph set}{cmd:,} {cmdab:pat:terns(}{it:color1 pat1 color2 pat2 ...}{cmd:)}
+[{cmd:off(}{it:#}{cmd:)} {cmd:dim(}{it:#}{cmd:)}]
 
 {p 4 8 2}
 2. Configure slide layers with preset shorthands:
 
 {p 8 16 2}
-{cmd:slidegraph set}{cmd:,} {cmdab:col:ors(}{it:color1 color2 ...}{cmd:)} {cmdab:cum:ulative}|{cmdab:spot:light} [{cmd:off(}{it:#}{cmd:)} {cmd:dim(}{it:#}{cmd:)}]
+{cmd:slidegraph set}{cmd:,} {cmdab:col:ors(}{it:color1 color2 ...}{cmd:)}
+{cmdab:cum:ulative}|{cmdab:spot:light} [{cmd:off(}{it:#}{cmd:)} {cmd:dim(}{it:#}{cmd:)}]
 
 {p 4 8 2}
 3. Execute multi-frame build:
 
 {p 8 16 2}
-{cmd:slidegraph} [{cmd:,} {cmd:stub(}{it:name}{cmd:)} {cmd:saving(}{it:filename}{cmd:)} {cmd:full}] {cmd::} {it:graph_command}
+{cmd:slidegraph} [{cmd:,} {cmd:stub(}{it:name}{cmd:)} {cmd:saving(}{it:filename}{cmd:)}
+{cmd:full}] {cmd::} {it:graph_command}
 
 {p 4 8 2}
 4. Export LaTeX Beamer overlay code:
 
 {p 8 16 2}
-{cmd:slidegraph export} [{it:using filename.tex}] [{cmd:,} {cmd:path(}{it:string}{cmd:)} {cmd:saving(}{it:filename}{cmd:)} {cmd:options(}{it:string}{cmd:)} {cmd:replace}]
+{cmd:slidegraph export} [{it:using filename.tex}] [{cmd:,} {cmd:path(}{it:string}{cmd:)}
+{cmd:saving(}{it:filename}{cmd:)} {cmd:options(}{it:string}{cmd:)} {cmd:replace}]
 
 {synoptset 24 tabbed}{...}
 {synopthdr}
@@ -157,28 +161,36 @@ between Stata working directories and LaTeX presentation source files.
 {pstd}
 {bf:Why color-based substitution?}
 {break}
-Stata's graphing ecosystem spans a wide variety of built-in commands ({cmd:twoway}, {cmd:graph bar}, {cmd:graph box}, {cmd:graph dot}, {cmd:histogram})
-and community-contributed packages ({cmd:coefplot}, {cmd:marginsplot}, {cmd:binscatter}, etc.), each with its own syntax for defining series and plot elements.
-Attempting to parse plot structures directly would either restrict {cmd:slidegraph} to basic {cmd:twoway} commands or make it fragile when used with wrapper packages.
+Stata's graphing ecosystem spans a wide variety of built-in commands ({cmd:twoway},
+{cmd:graph bar}, {cmd:graph box}, {cmd:graph dot}, {cmd:histogram}) and
+community-contributed packages ({cmd:coefplot}, {cmd:marginsplot}, {cmd:binscatter},
+etc.), each with its own syntax for defining series and plot elements.
+Attempting to parse plot structures directly would either restrict {cmd:slidegraph}
+to basic {cmd:twoway} commands or make it fragile when used with wrapper packages.
 
 {pstd}
-Despite their syntactic differences, nearly all Stata graph commands share a common denominator: they accept standard Stata color specifications.
-By keying frame visibility to color tokens rather than plot syntax, {cmd:slidegraph} remains completely command-agnostic{hline 2}any element whose color you can specify
-can be sequenced across slides.
+Despite their syntactic differences, nearly all Stata graph commands share a
+common denominator: they accept standard Stata color specifications.
+By keying frame visibility to color tokens rather than plot syntax,
+{cmd:slidegraph} remains completely command-agnostic{hline 2}any element whose
+color you can specify can be sequenced across slides.
 
 {pstd}
 {bf:Limitation and workarounds: Multiple layers with the same color}
 {break}
-Because {cmd:slidegraph} identifies layers by their color token, two plot elements that use the exact same color string cannot be toggled independently:
+Because {cmd:slidegraph} identifies layers by their color token, two plot elements
+that use the exact same color string cannot be toggled independently:
 
 {phang2}{cmd:. twoway (scatter y1 x1, mcolor(navy)) (scatter y2 x2, mcolor(navy))}{p_end}
 
 {pstd}
-If you need two series to appear in the {bf:same visual color} on different frames, you have two simple workarounds:
+If you need two series to appear in the {bf:same visual color} on different frames,
+you have two simple workarounds:
 
 {phang}
-1. {bf:Use visually identical color aliases:} Stata treats unit intensity multipliers and equivalent RGB triplets as identical on screen,
-while {cmd:slidegraph} treats them as distinct tokens:
+1. {bf:Use visually identical color aliases:} Stata treats unit intensity multipliers
+and equivalent RGB triplets as identical on screen, while {cmd:slidegraph} treats
+them as distinct tokens:
 {break}
 - Layer 1: {cmd:mcolor(navy)}
 {break}
@@ -189,9 +201,10 @@ while {cmd:slidegraph} treats them as distinct tokens:
 For example: {cmd:slidegraph set, colors(navy navy*1) cumulative}
 
 {phang}
-2. {bf:Copy and tweak the generated commands:} {cmd:slidegraph} prints the exact expanded command for every frame to the Stata Results window.
-In complex cases, you can assign temporary distinct colors to generate the sequence, then copy the echoed commands from the Results window
-and adjust the colors manually.
+2. {bf:Copy and tweak the generated commands:} {cmd:slidegraph} prints the exact
+expanded command for every frame to the Stata Results window. In complex cases,
+you can assign temporary distinct colors to generate the sequence, then copy the
+echoed commands from the Results window and adjust the colors manually.
 
 
 {marker examples}{...}
@@ -202,19 +215,28 @@ and adjust the colors manually.
 
 {pstd}1. Two-frame build with shorthand cumulative preset:{p_end}
 {phang2}{cmd:. slidegraph set, colors(navy cranberry) cumulative}{p_end}
-{phang2}{cmd:. slidegraph : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)), title("Price vs MPG by Foreign Status")}{p_end}
+{phang2}{cmd:. slidegraph : twoway} ///{break}
+    {cmd:(scatter price mpg if foreign==0, mcolor(navy))} ///{break}
+    {cmd:(scatter price mpg if foreign==1, mcolor(cranberry)),} ///{break}
+    {cmd:title("Price vs MPG by Foreign Status")}{p_end}
 
 {pstd}2. Three-frame build with spotlight focus and ghost dimming:{p_end}
 {phang2}{cmd:. slidegraph set, colors(navy cranberry midblue) spotlight dim(25)}{p_end}
-{phang2}{cmd:. slidegraph, stub(spot) : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg, lcolor(midblue))}{p_end}
+{phang2}{cmd:. slidegraph, stub(spot) : twoway} ///{break}
+    {cmd:(scatter price mpg if foreign==0, mcolor(navy))} ///{break}
+    {cmd:(scatter price mpg if foreign==1, mcolor(cranberry))} ///{break}
+    {cmd:(lfit price mpg, lcolor(midblue))}{p_end}
 
 {pstd}3. Combined slide sequence + standalone paper figure + LaTeX export:{p_end}
 {phang2}{cmd:. slidegraph set, colors(navy cranberry midblue) cumulative}{p_end}
-{phang2}{cmd:. slidegraph, stub(fig1) saving(output/fig1.pdf) full : twoway (scatter price mpg if foreign==0, mcolor(navy)) (scatter price mpg if foreign==1, mcolor(cranberry)) (lfit price mpg, lcolor(midblue)), title("Price vs MPG Progression")}{p_end}
+{phang2}{cmd:. slidegraph, stub(fig1) saving(output/fig1.pdf) full : twoway} ///{break}
+    {cmd:(scatter price mpg if foreign==0, mcolor(navy))} ///{break}
+    {cmd:(scatter price mpg if foreign==1, mcolor(cranberry))} ///{break}
+    {cmd:(lfit price mpg, lcolor(midblue)), title("Price vs MPG Progression")}{p_end}
 {phang2}{cmd:. slidegraph export using "fig1_slides.tex", path("figures/slides") replace}{p_end}
 
 {pstd}In your LaTeX Beamer presentation, simply insert:{p_end}
-{phang2}{cmd:\input{fig1_slides.tex}}{p_end}
+{phang2}{cmd:\input{c -(}fig1_slides.tex{c )-}}{p_end}
 
 
 {marker results}{...}
