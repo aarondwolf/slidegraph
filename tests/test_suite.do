@@ -458,21 +458,28 @@ else {
     local ++n_fail
 }
 
-// Comma inside quotes before options + intensity multiplier (*0.8)
+// Comma inside quotes before options + visually identical color aliases (navy vs navy*1 vs navy*1.0)
+slidegraph set, colors(navy navy*1 navy*1.0) cumulative
 slidegraph, stub(test21d) saving(t21d.pdf) : twoway ///
-    (scatter price mpg if make != "Ford, Inc.", mcolor(navy*0.8)) ///
-    (scatter price mpg if foreign == 1, mcolor(cranberry*0.9))
+    (scatter price mpg if make != "Ford, Inc." & foreign == 0, mcolor(navy)) ///
+    (scatter price mpg if foreign == 1, mcolor(navy*1)) ///
+    (lfit price mpg, lcolor(navy*1.0))
 
+local c1 `"`r(cmd_1)'"'
+local c2 `"`r(cmd_2)'"'
 capture graph describe test21d_1
 local rc_21d = _rc
-if `rc_21d' == 0 {
-    di as result "PASS: Test 21d - Quoted comma before options and color*# intensity multiplier handled cleanly"
+if `rc_21d' == 0 & ///
+   strpos(`"`c1'"', "mcolor(navy)") & strpos(`"`c1'"', "mcolor(navy*1%0)") & strpos(`"`c1'"', "lcolor(navy*1.0%0)") & ///
+   strpos(`"`c2'"', "mcolor(navy)") & strpos(`"`c2'"', "mcolor(navy*1)")   & strpos(`"`c2'"', "lcolor(navy*1.0%0)") {
+    di as result "PASS: Test 21d - Quoted comma and distinct color aliases (navy, navy*1, navy*1.0) isolated cleanly"
     local ++n_pass
     capture erase "t21d_1.pdf"
     capture erase "t21d_2.pdf"
+    capture erase "t21d_3.pdf"
 }
 else {
-    di as error "FAIL: Test 21d - Failed on quoted comma or intensity multiplier"
+    di as error "FAIL: Test 21d - Failed on quoted comma or distinct color aliases"
     local ++n_fail
 }
 

@@ -39,6 +39,32 @@ Instead of conditionally omitting series, `slidegraph` **plots all series in eve
 
 Because all series are evaluated in every frame, Stata locks in fixed axis limits, consistent tick intervals, and an identical legend bounding box throughout the entire animation sequence.
 
+### Design Philosophy: Why Color-Based Substitution?
+
+Stata's graphing ecosystem spans a wide variety of built-in commands (`twoway`, `graph bar`, `graph box`, `graph dot`, `histogram`) and community-contributed packages (`coefplot`, `marginsplot`, `binscatter`, etc.), each with its own syntax for defining series and plot elements. Attempting to parse plot structures directly would either restrict `slidegraph` to basic `twoway` commands or make it fragile when used with wrapper packages.
+
+Despite their syntactic differences, nearly all Stata graph commands share a common denominator: they accept standard Stata color specifications. By keying frame visibility to color tokens rather than plot syntax, `slidegraph` remains completely command-agnostic—any element whose color you can specify can be sequenced across slides.
+
+#### Limitation & Workarounds: Multiple Layers with the Same Color
+
+Because `slidegraph` identifies layers by their color token, two plot elements that use the exact same color string cannot be toggled independently:
+
+```stata
+// Both scatter plots will turn on/off together if both use 'navy'
+twoway (scatter y1 x1, mcolor(navy)) (scatter y2 x2, mcolor(navy))
+```
+
+If you need two series to appear in the **same visual color** on different frames, you have two simple workarounds:
+
+1. **Use visually identical color aliases:** Stata treats unit intensity multipliers and equivalent RGB triplets as identical on screen, while `slidegraph` sees them as distinct tokens:
+   - Layer 1: `mcolor(navy)`
+   - Layer 2: `mcolor(navy*1)` (or `mcolor(navy*1.0)`)
+   - Layer 3: `mcolor("26 71 111")` (the RGB equivalent of `navy`)
+   ```stata
+   slidegraph set, colors(navy navy*1 "26 71 111") cumulative
+   ```
+2. **Copy and tweak the generated commands:** `slidegraph` prints the exact expanded command for every frame to the Stata Results window. In complex cases, you can assign temporary distinct colors to generate the sequence, then copy the echoed commands from the Results window and adjust the colors manually.
+
 ---
 
 ## Architecture & Subcommands

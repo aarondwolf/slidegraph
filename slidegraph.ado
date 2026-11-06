@@ -282,11 +282,13 @@ program define slidegraph_run, rclass
         }
 
         _slidegraph_exec_frame `"`cur_cmd'"' "frame `i'/`N'" "`stub'_`i'" "`save_type'" `"`save_stem'_`i'`save_ext'"'
+        local cmd_`i' `"`s(exec_cmd)'"'
     }
 
     // Optionally render unsuffixed full figure (all series at 100% opacity)
     if "`full'" != "" {
         _slidegraph_exec_frame `"`cmd'"' "full frame" "`stub'" "`save_type'" `"`save_stem'`save_ext'"'
+        local cmd_full `"`s(exec_cmd)'"'
     }
 
     // Store run metadata for subsequent slidegraph export or query calls
@@ -301,6 +303,9 @@ program define slidegraph_run, rclass
     return local stub "`stub'"
     return local off  `"$SG_off"'
     return local dim  `"$SG_dim"'
+    forvalues i = 1/`N' {
+        return local cmd_`i' `"`cmd_`i''"'
+    }
     if `"`saving'"' != "" {
         return local saving    `"`saving'"'
         return local save_stem `"`save_stem'"'
@@ -308,11 +313,12 @@ program define slidegraph_run, rclass
     }
     if "`full'" != "" {
         return local full "1"
+        return local cmd_full `"`cmd_full'"'
     }
 end
 
 // Internal helper: inject name(..., replace), execute graph command, and save/export
-program define _slidegraph_exec_frame
+program define _slidegraph_exec_frame, sclass
     version 15.0
     args cmd label graphname save_type save_file
 
@@ -332,6 +338,8 @@ program define _slidegraph_exec_frame
         graph export `"`save_file'"', name(`graphname') replace
         di as text `"  Exported image: `save_file'"'
     }
+
+    sreturn local exec_cmd `"`exec_cmd'"'
 end
 
 /*==============================================================================
@@ -478,11 +486,12 @@ real scalar _sg_is_rgb(string scalar color, real vector rgb_vals)
 
 // Apply opacity modifier mod_str (e.g. "%0" or "%20") to all occurrences of color in cmd_in:
 // - RGB colors: places modifier inside quotes ("R G B" -> "R G B %0")
-// - Named styles: appends modifier to color token (navy -> navy%0, navy*0.8 -> navy*0.8%0)
+// - Named styles: appends modifier to exact color token (e.g. navy -> navy%0, navy*1 -> navy*1%0),
+//   treating navy, navy*1, and navy*1.0 as distinct tokens so visually identical aliases work
 void _sg_replace_color(string scalar cmd_in, string scalar color, string scalar mod_str, string scalar s_out)
 {
     real vector rgb
-    string scalar r_str, g_str, b_str, pat, rep, q
+    string scalar r_str, g_str, b_str, escaped, pat, rep, q
 
     rgb = J(1, 0, .)
     q = char(34)
@@ -495,7 +504,8 @@ void _sg_replace_color(string scalar cmd_in, string scalar color, string scalar 
         st_local(s_out, ustrregexra(cmd_in, pat, rep))
     }
     else {
-        pat = "\b(" + color + "(?:\*[0-9.]+)?)\b(?!%)"
+        escaped = subinstr(subinstr(color, ".", "\."), "*", "\*")
+        pat = "\b(" + escaped + ")\b(?!\*|\.[0-9]|%)"
         rep = "$1" + mod_str
         st_local(s_out, ustrregexra(cmd_in, pat, rep))
     }

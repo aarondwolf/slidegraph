@@ -151,6 +151,49 @@ The default is {cmd:20} (which becomes {cmd:%20}, dimmed ghost context).
 between Stata working directories and LaTeX presentation source files.
 
 
+{marker remarks}{...}
+{title:Remarks: Design philosophy and limitations}
+
+{pstd}
+{bf:Why color-based substitution?}
+{break}
+Stata's graphing ecosystem spans a wide variety of built-in commands ({cmd:twoway}, {cmd:graph bar}, {cmd:graph box}, {cmd:graph dot}, {cmd:histogram})
+and community-contributed packages ({cmd:coefplot}, {cmd:marginsplot}, {cmd:binscatter}, etc.), each with its own syntax for defining series and plot elements.
+Attempting to parse plot structures directly would either restrict {cmd:slidegraph} to basic {cmd:twoway} commands or make it fragile when used with wrapper packages.
+
+{pstd}
+Despite their syntactic differences, nearly all Stata graph commands share a common denominator: they accept standard Stata color specifications.
+By keying frame visibility to color tokens rather than plot syntax, {cmd:slidegraph} remains completely command-agnostic{hline 2}any element whose color you can specify
+can be sequenced across slides.
+
+{pstd}
+{bf:Limitation and workarounds: Multiple layers with the same color}
+{break}
+Because {cmd:slidegraph} identifies layers by their color token, two plot elements that use the exact same color string cannot be toggled independently:
+
+{phang2}{cmd:. twoway (scatter y1 x1, mcolor(navy)) (scatter y2 x2, mcolor(navy))}{p_end}
+
+{pstd}
+If you need two series to appear in the {bf:same visual color} on different frames, you have two simple workarounds:
+
+{phang}
+1. {bf:Use visually identical color aliases:} Stata treats unit intensity multipliers and equivalent RGB triplets as identical on screen,
+while {cmd:slidegraph} treats them as distinct tokens:
+{break}
+- Layer 1: {cmd:mcolor(navy)}
+{break}
+- Layer 2: {cmd:mcolor(navy*1)} (or {cmd:mcolor(navy*1.0)})
+{break}
+- Layer 3: {cmd:mcolor("26 71 111")} (the RGB equivalent of {cmd:navy})
+{break}
+For example: {cmd:slidegraph set, colors(navy navy*1) cumulative}
+
+{phang}
+2. {bf:Copy and tweak the generated commands:} {cmd:slidegraph} prints the exact expanded command for every frame to the Stata Results window.
+In complex cases, you can assign temporary distinct colors to generate the sequence, then copy the echoed commands from the Results window
+and adjust the colors manually.
+
+
 {marker examples}{...}
 {title:Examples}
 
