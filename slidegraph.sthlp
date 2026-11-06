@@ -291,8 +291,10 @@ echoed commands from the Results window and adjust the colors manually.
 
 
 {marker author}{...}
-{title:Author}
+{title:Author & Support}
 
 {pstd}
 Aaron Wolf, Northwestern University{break}
-Email: {browse "mailto:aaron.wolf@u.northwestern.edu":aaron.wolf@u.northwestern.edu}{p_end}
+Email: {browse "mailto:aaron.wolf@u.northwestern.edu":aaron.wolf@u.northwestern.edu}{break}
+Project: {browse "https://github.com/aarondwolf/slidegraph":https://github.com/aarondwolf/slidegraph}{break}
+Please visit the GitHub repository to check for updates or report issues.{p_end}
