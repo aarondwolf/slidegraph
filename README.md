@@ -6,13 +6,31 @@ Automate stepped, layered figures for slide presentations (such as LaTeX Beamer 
 
 ## Installation
 
-Install directly via `net install` from GitHub or a local clone:
+### From SSC (Boston College Archive)
+
+The official release of `slidegraph` can be installed directly from the SSC archive:
 
 ```stata
-// From GitHub:
-net install slidegraph, from("https://aarondwolf.github.io/slidegraph") replace
+ssc install slidegraph
+```
 
-// Or from a local directory:
+To update an existing installation:
+
+```stata
+ssc install slidegraph, replace
+```
+
+### From GitHub (Optional for Latest Updates)
+
+To install the latest development version with recent updates directly from GitHub:
+
+```stata
+net install slidegraph, from("https://aarondwolf.github.io/slidegraph") replace
+```
+
+Or from a local cloned directory:
+
+```stata
 net install slidegraph, from("C:/path/to/slidegraph") replace
 ```
 
@@ -38,6 +56,9 @@ Instead of conditionally omitting series, `slidegraph` **plots all series in eve
 - **Hidden (`0`):** Series receive an opacity modifier of `%0` (or user-defined `off()`).
 
 Because all series are evaluated in every frame, Stata locks in fixed axis limits, consistent tick intervals, and an identical legend bounding box throughout the entire animation sequence.
+
+> [!TIP]
+> **Stationary Legends:** Because all series are plotted in every frame, legend keys remain in fixed positions across slides rather than expanding or jumping as layers appear.
 
 ### Design Philosophy: Why Color-Based Substitution?
 
@@ -101,21 +122,38 @@ slidegraph [, stub(name) saving(filename) full] : <graph command>
 - **No graph options before colon**: Users specify all graph options (e.g., `title(...)`, `subtitle(...)`, `legend(...)`) directly within their graph command after the colon.
 - **`stub(name)`**: Prefix for memory graph names (`stub_1`, `stub_2`, ..., `stub_N`). Defaults to `sg`.
 - **`saving(filename)`**: Unified saving and exporting option that automatically inspects the file postfix/extension:
-  - `.pdf`, `.png`, `.svg`, `.eps`, `.tif` $\to$ automatically calls `graph export "filename_i.ext", name(stub_i) replace`.
+  - `.pdf`, `.png`, `.svg`, `.tif` $\to$ automatically calls `graph export "filename_i.ext", name(stub_i) replace`.
   - `.gph` (or omitting an extension) $\to$ automatically calls `graph save stub_i "filename_i.gph", replace`.
+  - **Recommended formats:** `.pdf` (vector, for LaTeX Beamer) and `.png` (raster, for PowerPoint) natively support alpha transparency. Avoid `.eps`, as PostScript Level 2/3 does not natively support semi-transparency.
 - **`full`**: In addition to generating the frame sequence, also creates and saves an **unsuffixed full figure** (`stub` in memory, `filename.ext` on disk) where all series are at 100% opacity. This enables generating both paper figures and slide animation frames from a single graph command.
 
-### 3. `slidegraph export`
+### 3. `slidegraph export` (Aliases: `slidegraph tex`, `slidegraph beamer`)
 Generates a clean LaTeX Beamer overlay `.tex` file that can be immediately `\input` into a Beamer slide.
 
 ```stata
 slidegraph export [using filename.tex] [, path(string) saving(filename) options(string) replace]
 ```
 
-- **`using filename.tex`**: Target `.tex` file (defaults to `saving_stem.tex`).
+- **`using filename.tex`**: Target `.tex` file (defaults to `<saving_stem>.tex`).
+- **`saving(filename)`**: Base image filename to reference. If omitted, automatically inherits the `saving()` target from the immediately preceding `slidegraph` run.
 - **`path(string)`**: Custom relative or absolute path to prepend in LaTeX `\includegraphics` commands (e.g., `path("figures/slides")`). `slidegraph` automatically strips any local Stata directory components from the image filename, solving path mismatches between Stata and LaTeX.
 - **`options(string)`**: Arguments passed inside `\includegraphics[...]` (defaults to `width=\linewidth`).
+- **`replace`**: Required to overwrite an existing `.tex` file (protects against unintended overwrites with error `rc 602`).
 - **Output syntax**: Generates clean, robust `\only<i...>{\includegraphics[...]}{...}}%` overlays with trailing `%` to prevent unwanted line breaks.
+
+### 4. `slidegraph query` (Aliases: `list`, `describe`, or `slidegraph` alone)
+Displays the active configuration in the Stata Results window, including frame count ($N$), color-pattern pairs, dim/off modifiers, RGB status, and last `saving()` path. Calling `slidegraph` with no arguments when a configuration is active runs `query` automatically.
+
+```stata
+slidegraph query
+```
+
+### 5. `slidegraph clear` (Alias: `reset`)
+Clears all stored configuration macros (`$SG_*`) from global memory. Recommended between distinct figure definitions in do-files to prevent state spillover.
+
+```stata
+slidegraph clear
+```
 
 ---
 
@@ -172,6 +210,25 @@ In your LaTeX Beamer presentation, simply insert:
 \end{frame}
 ```
 
+Or present talking points side-by-side with synchronized builds (see full compilable demo in `examples/beamer/`):
+```latex
+\begin{frame}{Model Progression}
+  \begin{columns}[T]
+    \begin{column}{0.42\textwidth}
+      \begin{itemize}
+        \item<1-> \textbf{Frame 1}: Baseline data points
+        \item<2-> \textbf{Frame 2}: Reveal comparison group
+        \item<3-> \textbf{Frame 3}: Overlay fitted trendline
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \centering
+      \input{paper_slide_overlays.tex}
+    \end{column}
+  \end{columns}
+\end{frame}
+```
+
 ### 4. Custom RGB Colors
 ```stata
 // RGB triples must be enclosed in quotes
@@ -221,3 +278,16 @@ slidegraph, stub(demo_bar) : graph bar (mean) price (mean) mpg, ///
 ### `slidegraph export`
 - **Scalars:** `r(N)` (number of frames written to overlay snippet)
 - **Macros:** `r(file)` (output `.tex` path), `r(path)` (LaTeX relative image path prefix), `r(options)` (options passed inside `\includegraphics[...]`)
+
+---
+
+## Author & Support
+
+- **Author**: Aaron Wolf (Northwestern University)
+- **Email**: [aaron.wolf@u.northwestern.edu](mailto:aaron.wolf@u.northwestern.edu)
+- **Repository**: [https://github.com/aarondwolf/slidegraph](https://github.com/aarondwolf/slidegraph)
+- **Bug Reports & Issues**: [https://github.com/aarondwolf/slidegraph/issues](https://github.com/aarondwolf/slidegraph/issues)
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.

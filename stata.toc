@@ -1,3 +1,4 @@
 v 3
 d Aaron Wolf, Northwestern University (aaron.wolf@u.northwestern.edu)
-p slidegraph Automate stepped and layered graphs for presentation slides
+d Project: https://github.com/aarondwolf/slidegraph
+p slidegraph module to automate stepped and layered graphs for presentation slides

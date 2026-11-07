@@ -1,6 +1,8 @@
-*! version 1.3.0  05nov2026
+*! version 1.3.0  06nov2026
 *! slidegraph: Automated stepped/layered graph generation for presentations
 *! Author: Aaron Wolf (aaron.wolf@u.northwestern.edu)
+*! Project: https://github.com/aarondwolf/slidegraph
+*! Issues: https://github.com/aarondwolf/slidegraph/issues
 *! Program architecture: slidegraph set, slidegraph, & slidegraph export
 
 /*==============================================================================

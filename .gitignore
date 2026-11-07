@@ -28,3 +28,6 @@ Thumbs.db
 *.snm
 *.toc
 !stata.toc
+
+# Distribution and archive builds
+*.zip

@@ -1,11 +1,12 @@
 {smcl}
-{* *! version 1.3.0  05nov2026}{...}
+{* *! version 1.3.0  06nov2026}{...}
 {viewerjumpto "Syntax" "slidegraph##syntax"}{...}
 {viewerjumpto "Description" "slidegraph##description"}{...}
 {viewerjumpto "Options" "slidegraph##options"}{...}
 {viewerjumpto "Remarks" "slidegraph##remarks"}{...}
 {viewerjumpto "Examples" "slidegraph##examples"}{...}
 {viewerjumpto "Stored results" "slidegraph##results"}{...}
+{viewerjumpto "Installation" "slidegraph##installation"}{...}
 {viewerjumpto "Author" "slidegraph##author"}{...}
 {title:Title}
 
@@ -45,6 +46,27 @@
 {cmd:slidegraph export} [{it:using filename.tex}] [{cmd:,} {cmd:path(}{it:string}{cmd:)}
 {cmd:saving(}{it:filename}{cmd:)} {cmd:options(}{it:string}{cmd:)} {cmd:replace}]
 
+{p 8 16 2}
+({it:Note:} {cmd:slidegraph tex} and {cmd:slidegraph beamer} are valid synonyms for {cmd:slidegraph export}.)
+
+{p 4 8 2}
+5. Query active configuration:
+
+{p 8 16 2}
+{cmd:slidegraph query}
+
+{p 8 16 2}
+({it:Note:} {cmd:slidegraph list}, {cmd:slidegraph describe}, or entering {cmd:slidegraph} alone without arguments also queries active settings.)
+
+{p 4 8 2}
+6. Clear configuration globals:
+
+{p 8 16 2}
+{cmd:slidegraph clear}
+
+{p 8 16 2}
+({it:Note:} {cmd:slidegraph reset} is a valid synonym for {cmd:slidegraph clear}.)
+
 {synoptset 24 tabbed}{...}
 {synopthdr}
 {synoptline}
@@ -64,9 +86,13 @@
 {syntab:Export (slidegraph export)}
 {synopt :{it:using filename.tex}}target {cmd:.tex} file path; default is {it:saving_stem.tex}{p_end}
 {synopt :{opt path(string)}}custom relative/absolute image directory to prepend in LaTeX {cmd:\includegraphics} commands{p_end}
-{synopt :{opt saving(filename)}}override saved image filename stem and extension{p_end}
+{synopt :{opt saving(filename)}}override saved image filename stem and extension (defaults to previous {cmd:saving()} target){p_end}
 {synopt :{opt options(string)}}options passed inside {cmd:\includegraphics[...]}; default is {cmd:width=\linewidth}{p_end}
 {synopt :{opt replace}}overwrite existing {cmd:.tex} file{p_end}
+
+{syntab:Utility (query & clear)}
+{synopt :{cmd:slidegraph query}}display active configuration details in Results window (synonyms: {cmd:list}, {cmd:describe}){p_end}
+{synopt :{cmd:slidegraph clear}}wipe all stored configuration globals ({cmd:$SG_*}) from memory (synonym: {cmd:reset}){p_end}
 {synoptline}
 
 
@@ -116,9 +142,12 @@ frame names based on {opt stub()}. If a {cmd:name()} option is detected in the g
 ({it:filename_1.ext}, {it:filename_2.ext}, ..., {it:filename_N.ext}).
 The action is determined automatically by inspecting the file postfix:
 {break}
-- {cmd:.pdf}, {cmd:.png}, {cmd:.svg}, {cmd:.eps}, {cmd:.tif}: automatically calls {cmd:graph export}.
+- {cmd:.pdf}, {cmd:.png}, {cmd:.svg}, {cmd:.tif}: automatically calls {cmd:graph export}.
 {break}
 - {cmd:.gph} (or omitting an extension): automatically calls {cmd:graph save}.
+{break}
+{it:Format recommendation:} Use {cmd:.pdf} (vector, ideal for LaTeX Beamer) or {cmd:.png} (raster, ideal for PowerPoint).
+Avoid {cmd:.eps}, as PostScript Level 2/3 does not natively support alpha transparency modifiers.
 
 {phang}
 {opt full} instructs {cmd:slidegraph} to also render an unsuffixed full figure ({it:stub} in memory and {it:filename.ext} on disk)
@@ -155,9 +184,35 @@ The default is {cmd:20} (which becomes {cmd:%20}, dimmed ghost context).
 {cmd:slidegraph} strips out any local directory components from the saved image filename and substitutes this path, solving relative path mismatches
 between Stata working directories and LaTeX presentation source files.
 
+{phang}
+{opt saving(filename)} in {cmd:slidegraph export} overrides the image filename stem and extension referenced in LaTeX {cmd:\includegraphics} commands.
+If omitted, it automatically inherits the {opt saving()} target specified in the preceding {cmd:slidegraph} run.
+
+{phang}
+{opt options(string)} in {cmd:slidegraph export} specifies options passed inside {cmd:\includegraphics[...]}; default is {cmd:width=\linewidth}.
+
+{phang}
+{opt replace} in {cmd:slidegraph export} permits overwriting an existing {cmd:.tex} file. If omitted and the target file exists, Stata exits with error {search r(602):rc 602}.
+
+{phang}
+{cmd:slidegraph query} displays the active configuration in the Stata Results window, including total frames ({cmd:N}),
+color-pattern pairs, dim and off opacity modifiers, RGB color detection, and the last {opt saving()} path.
+({cmd:slidegraph list}, {cmd:slidegraph describe}, or entering {cmd:slidegraph} without arguments also executes this query.)
+
+{phang}
+{cmd:slidegraph clear} removes all stored configuration global macros ({cmd:$SG_*}) from memory.
+Recommended between separate graph builds in do-files to avoid state leakage. ({cmd:slidegraph reset} is an alias.)
+
 
 {marker remarks}{...}
 {title:Remarks: Design philosophy and limitations}
+
+{pstd}
+{bf:Stationary axes, ticks, and legends}
+{break}
+Because all series are evaluated in every single frame, Stata locks in fixed axis limits, consistent tick intervals,
+and an identical legend bounding box throughout the entire sequence. Series that are hidden in a given frame ({cmd:%0})
+retain their labeled entry in the legend, preventing the legend box from resizing, shifting, or re-centering across slides.
 
 {pstd}
 {bf:Why color-based substitution?}
@@ -290,6 +345,22 @@ echoed commands from the Results window and adjust the colors manually.
 {p2colreset}{...}
 
 
+{marker installation}{...}
+{title:Installation}
+
+{pstd}
+Install from the SSC archive (recommended):{p_end}
+{phang2}{cmd:. }{stata "ssc install slidegraph"}{p_end}
+
+{pstd}
+To update an existing installation to the newest release:{p_end}
+{phang2}{cmd:. }{stata "ssc install slidegraph, replace"}{p_end}
+
+{pstd}
+Optional: install the latest updates directly from GitHub:{p_end}
+{phang2}{cmd:. }{stata `"net install slidegraph, from("https://aarondwolf.github.io/slidegraph") replace"'}{p_end}
+
+
 {marker author}{...}
 {title:Author & Support}
 
@@ -297,4 +368,5 @@ echoed commands from the Results window and adjust the colors manually.
 Aaron Wolf, Northwestern University{break}
 Email: {browse "mailto:aaron.wolf@u.northwestern.edu":aaron.wolf@u.northwestern.edu}{break}
 Project: {browse "https://github.com/aarondwolf/slidegraph":https://github.com/aarondwolf/slidegraph}{break}
+Issues & bug reports: {browse "https://github.com/aarondwolf/slidegraph/issues":https://github.com/aarondwolf/slidegraph/issues}{break}
 Please visit the GitHub repository to check for updates or report issues.{p_end}
